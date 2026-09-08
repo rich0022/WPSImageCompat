@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WPS Image Compat for Excel — 安装</title>
+  <style>
+    body { margin: 0; background: #f5f8f6; color: #20372f; font: 16px/1.75 system-ui, sans-serif; }
+    main { max-width: 760px; margin: 60px auto; padding: 0 24px; }
+    h1 { line-height: 1.2; font-size: clamp(28px, 5vw, 42px); }
+    a { color: #176442; } code { overflow-wrap: anywhere; }
+    .download { display: inline-block; padding: 10px 18px; background: #176442; color: white; border-radius: 6px; text-decoration: none; }
+    li { margin: 10px 0; } section { margin: 30px 0; }
+  </style>
+</head>
+<body><main>
+  <p>PHASE 3 · 预览版</p>
+  <h1>WPS Image Compat for Excel</h1>
+  <p>在 Windows 和 macOS 桌面版 Excel 中扫描 WPS DISPIMG 公式，显示可移除的 PNG/JPEG 图片预览，并保留原始公式。</p>
+  <p><a class="download" href="/manifest.xml" download="WPSImageCompat.xml">下载 Excel 加载项清单</a></p>
+  <p>这是供 Excel 安装的 XML 清单。网站本身不能读取工作簿；安装后无需运行本地开发服务。</p>
+  <section><h2>macOS 安装</h2>
+    <ol><li>下载上方清单，将它保存到 <code>~/Library/Containers/com.microsoft.Excel/Data/Documents/wef/</code>。目录不存在时先创建。</li>
+    <li>在 Excel 的「插入 → 加载项 → 我的加载项」中选择本插件，必要时重启 Excel。</li>
+    <li>打开工作簿，从 WPS Image Compat 功能区打开任务窗格，先 Scan Workbook，再 Show Images。</li></ol>
+  </section>
+  <section><h2>Windows 安装</h2>
+    <p>测试时，将清单放入共享目录，通过 Excel「信任中心 → 受信任的加载项目录」添加共享目录，再从「我的加载项 → 共享文件夹」安装。企业也可由 Microsoft 365 管理员统一部署。</p>
+    <p><a href="https://learn.microsoft.com/en-us/office/dev/add-ins/testing/create-a-network-shared-folder-catalog-for-task-pane-and-content-add-ins">微软 Windows 侧载步骤</a></p>
+  </section>
+  <section><h2>使用说明</h2>
+    <p>图片操作需要 ExcelApi 1.10。Show 显示预览，Refresh 重新适配单元格，Remove Preview Images 仅清理插件标记图片。预览是会随工作簿保存的浮动图片，Convert 尚未实现。</p>
+    <p>请先用文件副本测试。真实 WPS 文件兼容性及 Windows/macOS 显示效果仍需验收；如果 Excel 已丢弃 WPS 图片资源，插件无法恢复不存在的资源。</p>
+    <p><a href="https://github.com/rich0022/WPSImageCompat#readme">完整说明与源代码</a> · <a href="/support.html">帮助</a></p>
+  </section>
+</main></body>
+</html>

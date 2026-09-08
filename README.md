@@ -158,9 +158,13 @@ Phase 3 还需在 Windows/macOS 各执行以下真实工作簿验收：
 
 ## GitHub 与 Cloudflare 公共使用
 
-构建输出为 `dist/`。后续可在 Cloudflare Pages 连接本仓库，生产分支 `main`、构建命令 `npm run build`、输出目录 `dist`。
+本项目已配置 **Cloudflare Workers Static Assets**，Worker 名为 `wpsimagecompat`，生产域名为 `https://wpsimagecompat.fogce.workers.dev`。这不是 Pages 项目。
 
-当前清单仍指向 localhost，尚未部署 Cloudflare。获得固定 HTTPS 域名后，需要生成独立生产 manifest，将其中所有 localhost URL 替换为正式域名，保留任务窗格路径 `/src/taskpane/taskpane.html`。根目录 manifest 不会自动复制到 dist，发布时需额外提供下载文件；网站根路径的安装介绍页也尚未制作。
+Cloudflare 的 Worker → Settings → Build 设置：生产分支 `main`，构建命令 `npm run build`，部署命令 `npx wrangler deploy`，根目录为仓库根目录。配置来自仓库的 `wrangler.jsonc`，直接部署 `dist/`，不会进入 Vite 自动改写流程，也不需要 Cloudflare Vite 插件。
+
+构建结束会生成 `dist/manifest.xml`，其中全部 URL 指向生产域名；根目录 `manifest.xml` 继续用于 localhost 开发。网站首页提供安装说明和生产清单下载。安装生产版时替换旧开发版清单，两者使用相同加载项 ID。
+
+本地验证可运行 `npm run deploy:check`，实际发布可运行 `npm run deploy`（需要对应 Cloudflare 账号权限）。部署步骤、验收与排错见 [DEPLOYMENT.md](DEPLOYMENT.md)。配置和 dry run 通过不等于生产部署成功，应核对线上入口。
 
 Cloudflare 托管页面，Excel 通过 manifest 加载插件。小范围测试可侧载，企业可由 Microsoft 365 管理中心分发，公众便捷安装需提交微软加载项市场审核。正式安装后用户不需要 Node.js 或本地开发证书。
 
