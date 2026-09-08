@@ -4,11 +4,11 @@
 
 仓库：[rich0022/WPSImageCompat](https://github.com/rich0022/WPSImageCompat)
 
-当前版本 **0.2.0 / Phase 2**：扫描 DISPIMG 公式，并从当前工作簿中读取、解析图片资源。**尚不能显示或恢复图片**；Shape 预览属于 Phase 3。全部操作只读，不删除或替换原公式。
+当前版本 **0.3.0 / Phase 3**：扫描 DISPIMG、读取图片资源，并通过 Excel Shape 显示可移除的浮动图片预览。支持 Show、Refresh 和 Remove；不删除或替换原公式，尚未实现 Convert。
 
 ## 现在怎样使用
 
-需要 Node.js 22.12+（建议受支持的 LTS）、桌面版 Excel，以及 Office.js CDN 网络访问。扫描要求 ExcelApi 1.4；图片读取单独检查 CompressedFile 1.1，宿主不支持时仍保留公式扫描结果。
+需要 Node.js 22.12+（建议受支持的 LTS）、桌面版 Excel，以及 Office.js CDN 网络访问。扫描要求 ExcelApi 1.4；图片读取单独检查 CompressedFile 1.1，宿主不支持时仍保留公式扫描结果。图片操作需要 ExcelApi 1.10；合并单元格整体适配需要 ExcelApi 1.13，较旧宿主按原单元格边界适配。
 
 ```sh
 npm ci
@@ -55,7 +55,25 @@ npm run dev
 
 没有 DISPIMG 时跳过整个文件读取。普通 Excel 文件没有 `xl/cellimages.xml` 时正常返回。若宿主不支持完整文件读取，或 ZIP/XML 损坏，资源统计保持 `—`，不会将“未检查”伪装成“缺失”。
 
-**Show Images、Refresh、Remove Preview Images、Convert Workbook 均未实现，按钮保持禁用。** 三项图片设置预选开启但暂不能修改。
+## Phase 3 图片预览
+
+- **Scan Workbook**：只读扫描及图片资源检查。
+- **Show Images**：重新扫描当前工作簿，显示找到的 PNG/JPEG 图片，已有预览跳过；问题单元格单独报告。
+- **Refresh Images**：重新扫描并按当前单元格尺寸重新生成。先生成所有替换图，再删除旧预览；读取、预检或生成失败时保留旧预览并尝试清理新图。资源有缺失/错误时停止刷新。删除旧图期间的个别失败会明确报告，可能需要重试。
+- **Remove Preview Images**：不依赖 WPS 源资源，遍历全部工作表并仅删除插件标记图片。重复执行不会影响普通用户图片。
+- **Convert Workbook**：仍禁用，留待 Phase 4。
+
+三项设置默认开启。Keep aspect ratio / Fit image inside cell 可修改；设置变化通过 Refresh 应用到旧预览。Preserve original DISPIMG formula 在预览模式始终开启且不可取消。
+
+默认以 Excel 的点为单位计算尺寸，保持比例、居中、预留最多 1 点内边距。取消适配后保留图片原始 Shape 尺寸，可能超出单元格；靠近工作表左上角时位置钳制到 0。取消比例但保持适配会拉伸填充单元格。隐藏行/列或零尺寸单元格跳过；取消隐藏后可重新 Show 或 Refresh。隐藏工作表仍处理。
+
+Shape 使用 Excel 原生 `placement = TwoCell`，跟随单元格移动和缩放，比例设置同时写入 `lockAspectRatio`。不同 Excel 版本在非等比调整行高/列宽、合并和隐藏单元格时可能有不同效果；没有后台事件监听器持续重新居中，必要时点击 Refresh 重新适配。
+
+名称格式为 `WPSIMG_<ID 的 SHA-256 摘要>_<A1 地址>_<运行 UUID>`，完整图片 ID 放在替代文字描述中。每次运行有唯一名称；Show 根据 ID 和当前位置判断已有图片，避免同一 ID 在多个单元格或插入行后错误去重。
+
+删除需要名称以 `WPSIMG_` 开头 **并且**替代文字标题为 `WPS Image Compat preview v1`。普通图片仅名字相似不会被删除。手动改掉标记或分组后的预览不保证被识别，请保留这些标记；清理只遍历顶层 Shape，不递归解组用户对象。
+
+**这些是工作簿中的真实浮动 Shape。保存文件会保存预览；它们不是 Excel 原生单元格图片，不会自动消失。** 原公式一直保留，Remove 后原有公式错误显示可能重新出现。图片解析在本机完成，无上传。Excel 的 WPS 资源保留问题仍适用。
 
 ## Phase 2 工作流程
 
@@ -73,7 +91,7 @@ ID 与单元格匹配 → found / missing / error
 - 同一 media 路径在一次解析中只转 Base64 一次，不持久保存工作簿或图片，不发送到服务器。
 - 外部 relationship 不下载；目标必须解析到 `xl/media/`。不允许 DTD / 自定义实体声明，歧义 ID / relationship 不随机挑选。
 - 限制：压缩文件 100 MiB、ZIP 条目 20,000、每 XML 4 MiB、每图片 20 MiB、累计解压读取 128 MiB。超过限制明确报错；资源流达到限制即暂停。
-- Base64 读取成功不代表图片编码一定可由 Excel Shape 解码；实际图片显示格式兼容性留待 Phase 3。
+- Base64 读取成功不代表图片编码一定可由 Excel Shape 解码；Phase 3 仅传入官方支持的 PNG/JPEG，其他格式报告跳过，损坏编码由宿主报错。
 
 [微软 getFileAsync 文档](https://learn.microsoft.com/en-us/javascript/api/office/office.document?view=common-js)列出桌面 Excel Windows/macOS 的 Compressed 支持，但具体版本和 WPS 自定义部件能否在 Excel 导出的快照中保留，仍需实机验证。如果 Excel 已丢弃图片部件，本阶段不会从不存在的资源恢复图片，也不自动读取磁盘原文件。
 
@@ -89,6 +107,10 @@ src/
     wps-image-parser.ts       WPS OOXML、relationship、media 解析
     image-mapper.ts           单元格和图片资源匹配
     workbook-detector.ts      扫描、读取、解析的流程协调
+    image-renderer.ts         Shape 插入、预检、回滚和清理
+    image-layout.ts           纯几何布局计算
+    preview-identity.ts       唯一名称和所有权/位置判断
+    preview-controller.ts     Show/Refresh 前重新扫描
   types/wps.ts               公共数据类型
   utils/                     XML、Base64、错误类型和文件大小限制
 public/                      Ribbon 图标和本地帮助页
@@ -97,7 +119,7 @@ manifest.xml                 XML manifest 与 Ribbon
 vite.config.ts               HTTPS 开发服务和静态构建
 ```
 
-解析结果使用 `Map`，重复引用共享一次解析的 Base64；跨扫描缓存、Shape renderer 和 Convert 接口留待后续阶段。
+解析结果使用 `Map`，重复引用共享一次解析的 Base64；不保留跨扫描资源缓存，Show/Refresh 每次读取最新快照。Convert 接口留待 Phase 4。
 
 ## 检查与双平台验收
 
@@ -120,7 +142,19 @@ Windows 和 macOS 各使用真实 WPS 工作簿副本执行：
 6. 连续扫描至少三次，无文件句柄占用失败；所有原公式、单元格和用户图片保持不变。
 7. 对比 WPS 原文件和 Excel 导出快照，确认是否保留 cellimages 及 media；记录 Excel 版本与平台。
 
-各阶段记录：[Phase 1](PHASE1.md)、[Phase 2](PHASE2.md)。
+Phase 3 还需在 Windows/macOS 各执行以下真实工作簿验收：
+
+- 放置横图、竖图、重复 ID、不连续位置和用户自有图片；Show 后检查居中、不越界和原始比例。
+- 重复 Show 不新增重复图；两个单元格引用相同 ID 时各显示一张。
+- 插入/删除行、改变行高/列宽、合并单元格后检查原生附着行为，并执行 Refresh 验证重新适配。
+- 修改两项设置后 Refresh，核对比例和填充差异；取消适配时检查大图重复执行不累加。
+- 保护工作表、损坏图片或移除资源后尝试 Refresh，核对旧预览保留和失败提示。
+- Remove 后仅插件图片消失，原公式、用户图片及其他数据保持不变。
+- 保存、关闭、重新打开，核对预览和所有权标记保留，仍能再次 Show 去重及 Remove。
+
+本轮自动测试使用 Excel 模拟对象，不能证明真实 Excel 布局、原生锚点或保存行为一致。
+
+各阶段记录：[Phase 1](PHASE1.md)、[Phase 2](PHASE2.md)、[Phase 3](PHASE3.md)。
 
 ## GitHub 与 Cloudflare 公共使用
 
@@ -132,7 +166,6 @@ Cloudflare 托管页面，Excel 通过 manifest 加载插件。小范围测试�
 
 ## 后续
 
-- **Phase 3**：Shape 预览、单元格定位和缩放、去重、Refresh、仅移除插件图片。
 - **Phase 4**：Convert 接口和约定范围、完善异常处理与双平台验收。
 
 此项目与 WPS / Microsoft 没有官方关联。公开源码不自动授予开源许可；仓库许可由维护者另行选择。

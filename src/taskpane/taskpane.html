@@ -8,8 +8,8 @@
 </head>
 <body>
   <main>
-    <header><span class="badge">PHASE 2 · PREVIEW</span><h1>WPS Image Compat</h1>
-      <p>Find WPS cell images and check embedded resources.</p></header>
+    <header><span class="badge">PHASE 3 · PREVIEW</span><h1>WPS Image Compat</h1>
+      <p>Preview WPS cell images in Excel while keeping your formulas.</p></header>
     <p id="host-status" role="status">Connecting to Excel…</p>
     <section class="summary" aria-label="Scan results">
       <h2>Detected: <strong id="image-count">—</strong> WPS images</h2>
@@ -19,15 +19,15 @@
     </section>
     <div class="actions">
       <button id="scan" disabled>Scan Workbook</button>
-      <button disabled>Show Images</button><button disabled>Refresh Images</button>
-      <button disabled>Remove Preview Images</button><button disabled>Convert Workbook</button>
+      <button id="show" disabled>Show Images</button><button id="refresh" disabled>Refresh Images</button>
+      <button id="remove" disabled>Remove Preview Images</button><button disabled>Convert Workbook</button>
     </div>
-    <fieldset disabled><legend>Preview settings · available in Phase 3</legend>
+    <fieldset id="preview-settings" disabled><legend>Preview settings</legend>
       <label><input id="keep-aspect-ratio" type="checkbox" checked /> Keep aspect ratio</label>
       <label><input id="fit-inside-cell" type="checkbox" checked /> Fit image inside cell</label>
-      <label><input id="preserve-formula" type="checkbox" checked /> Preserve original DISPIMG formula</label>
+      <label><input id="preserve-formula" type="checkbox" checked disabled /> Preserve original DISPIMG formula (always)</label>
     </fieldset>
-    <p class="hint">Scanning is read-only and stays on your device. Avoid editing during a scan. Image preview and conversion are not available yet.</p>
+    <p class="hint">Scan reads only. Show and Refresh add floating PNG/JPEG preview images; saved workbooks keep them until you remove them. Avoid editing during an operation. Convert is not available yet.</p>
     <p id="scan-status" role="status" aria-live="polite"></p>
     <ul id="results" aria-label="Detected image cells"></ul>
   </main>
