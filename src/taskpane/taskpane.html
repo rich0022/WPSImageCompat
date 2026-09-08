@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WPS Image Compat for Excel</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+</head>
+<body>
+  <main>
+    <header><span class="badge">PHASE 2 · PREVIEW</span><h1>WPS Image Compat</h1>
+      <p>Find WPS cell images and check embedded resources.</p></header>
+    <p id="host-status" role="status">Connecting to Excel…</p>
+    <section class="summary" aria-label="Scan results">
+      <h2>Detected: <strong id="image-count">—</strong> WPS images</h2>
+      <dl><div><dt>Worksheets with images</dt><dd id="sheet-count">—</dd></div>
+        <div><dt>Resources parsed</dt><dd id="parsed-count">—</dd></div>
+        <div><dt>Missing resources</dt><dd id="missing-count">—</dd></div><div><dt>Resource errors</dt><dd id="error-count">—</dd></div></dl>
+    </section>
+    <div class="actions">
+      <button id="scan" disabled>Scan Workbook</button>
+      <button disabled>Show Images</button><button disabled>Refresh Images</button>
+      <button disabled>Remove Preview Images</button><button disabled>Convert Workbook</button>
+    </div>
+    <fieldset disabled><legend>Preview settings · available in Phase 3</legend>
+      <label><input id="keep-aspect-ratio" type="checkbox" checked /> Keep aspect ratio</label>
+      <label><input id="fit-inside-cell" type="checkbox" checked /> Fit image inside cell</label>
+      <label><input id="preserve-formula" type="checkbox" checked /> Preserve original DISPIMG formula</label>
+    </fieldset>
+    <p class="hint">Scanning is read-only and stays on your device. Avoid editing during a scan. Image preview and conversion are not available yet.</p>
+    <p id="scan-status" role="status" aria-live="polite"></p>
+    <ul id="results" aria-label="Detected image cells"></ul>
+  </main>
+  <script type="module" src="./taskpane.ts"></script>
+</body>
+</html>

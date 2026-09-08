@@ -1,0 +1,1 @@
+export const MAX_WORKBOOK_BYTES = 100 * 1024 * 1024;
