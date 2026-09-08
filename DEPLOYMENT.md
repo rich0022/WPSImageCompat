@@ -1,7 +1,7 @@
 # Cloudflare Workers 部署
 
-目标 Worker：`wpsimagecompat`  
-目标域名：https://wpsimagecompat.fogce.workers.dev  
+目标 Worker：`wpsimagecompat`
+目标域名：https://wpsimagecompat.fogce.workers.dev
 生产分支：`main`
 
 ## 本次错误原因
