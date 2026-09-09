@@ -1,6 +1,6 @@
 {
   "name": "wps-image-compat",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "private": true,
   "description": "WPS Image Compat for Excel",
   "type": "module",
@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && vite build && node scripts/prepare-deployment.mjs",
     "test": "node --import tsx --test tests/*.test.ts",
+    "diagnose:file": "node --import tsx scripts/diagnose-workbook.ts",
     "validate:manifest": "office-addin-manifest validate manifest.xml",
     "certs": "office-addin-dev-certs install",
     "deploy": "npm run build && wrangler deploy",

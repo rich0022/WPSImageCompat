@@ -4,7 +4,7 @@
 
 仓库：[rich0022/WPSImageCompat](https://github.com/rich0022/WPSImageCompat)
 
-当前版本 **0.3.0 / Phase 3**：扫描 DISPIMG、读取图片资源，并通过 Excel Shape 显示可移除的浮动图片预览。支持 Show、Refresh 和 Remove；不删除或替换原公式，尚未实现 Convert。
+当前版本 **0.5.0**：在 Phase 4 预览功能上增加简体中文/英文界面与发布更新提示。支持扫描、显示、刷新、移除预览、扫描/读取取消和诊断导出；不删除或替换原公式。Convert 已预留独立接口，实际转换尚未实现。Windows/macOS 原生 Excel 验收仍待完成，不能把单元测试视为双平台认证。
 
 ## 现在怎样使用
 
@@ -22,7 +22,7 @@ npm run dev
 
 1. 启动服务并信任开发证书。
 2. 将根目录 `manifest.xml` 复制到 `~/Library/Containers/com.microsoft.Excel/Data/Documents/wef/wps-image-compat.xml`，不存在的目录先创建。升级时替换旧清单。
-3. 在 Excel 的 Insert → Add-ins → My Add-ins 中打开本插件，必要时重启 Excel。
+3. 保存当前工作并完全退出、重新打开 Excel，再打开工作簿。从 **开始（Home）→ 加载项（Add-ins）**菜单选择本插件，本项目用户已在此入口找到它。部分旧界面也可能提供“插入 → 我的加载项”旁的小箭头菜单，请以实际界面为准。侧载插件不一定出现在账户/商店对话框中；“开发工具 → Excel 加载项”管理传统加载项，不用于本项目。
 4. 从 **WPS Image Compat** Ribbon 标签打开任务窗格。
 5. 打开 WPS 工作簿，看到 `Connected to Excel` 后点击 **Scan Workbook**。
 
@@ -38,6 +38,18 @@ npm run dev
 参考：[Microsoft Windows sideload 文档](https://learn.microsoft.com/en-us/office/dev/add-ins/testing/create-a-network-shared-folder-catalog-for-task-pane-and-content-add-ins)。菜单可能因 Excel 版本而异，组织策略可能限制侧载。
 
 直接在浏览器访问 `https://localhost:3000/src/taskpane/taskpane.html` 只能看到界面，不能读取 Excel 工作簿。
+
+## 语言与更新
+
+任务窗格支持简体中文和英文，默认使用 `Office.context.displayLanguage`，连接 Excel 前使用浏览器语言；暂不支持的语言回退英文，其他中文区域回退简体中文。可在顶部手动切换，并在当前网站的本地存储中记住选择；存储受限时只在本次会话生效。切换不刷新页面，不清空扫描结果，也不修改工作簿。此功能翻译插件界面和常见错误，不翻译工作簿内容；详细宿主错误保留原文供排查。Ribbon 保持产品名称。
+
+- 开发：`npm run dev` 使用 Vite 的开发更新能力；代码修改可能重载窗格，调试时应使用工作簿副本。
+- 发布：构建同时生成带独立构建 ID 的 `version.json` 和匹配的脚本。生产窗格打开、重新获得焦点及可见状态下每 5 分钟检查同源版本信息；请求不包含工作簿内容，也不携带凭据。离线、旧部署无版本文件或检查超时不会中断图片操作。
+- 新版本到达后显示“更新任务窗格”；正在扫描或修改图片时禁用此按钮。用户点击后重新加载窗格，清空本次扫描结果，已有预览保留。即使版本号相同，重新构建或回滚也可被识别；不会在图片操作中自动刷新。
+- 旧版本尚无更新检测逻辑，第一次升级到此版需要关闭并重新打开窗格。开发清单始终指向本机，生产清单始终指向 Cloudflare；两者互不切换。
+- 界面和逻辑更新不需要重装清单；权限、资源 URL 或 Ribbon 等 XML 清单变化仍按 Office 的更新/侧载流程处理。
+
+详见 [更新与语言交付记录](UPDATES.md)。
 
 ## 扫描结果
 
@@ -61,7 +73,9 @@ npm run dev
 - **Show Images**：重新扫描当前工作簿，显示找到的 PNG/JPEG 图片，已有预览跳过；问题单元格单独报告。
 - **Refresh Images**：重新扫描并按当前单元格尺寸重新生成。先生成所有替换图，再删除旧预览；读取、预检或生成失败时保留旧预览并尝试清理新图。资源有缺失/错误时停止刷新。删除旧图期间的个别失败会明确报告，可能需要重试。
 - **Remove Preview Images**：不依赖 WPS 源资源，遍历全部工作表并仅删除插件标记图片。重复执行不会影响普通用户图片。
-- **Convert Workbook**：仍禁用，留待 Phase 4。
+- **Cancel Scan / Read**：在扫描或文件读取阶段请求取消，完成当前读取及句柄清理后结束。图片写入和清理期间禁用。
+- **Download Diagnostics**：下载当前 Excel 能力、最后操作的计数和错误码，不含工作簿名称、工作表名、地址、公式、图片 ID 或图片内容，不上传数据。某些宿主可能限制下载，请按 [测试说明](TESTING.md) 记录结果。
+- **Convert Workbook**：仍禁用。Phase 4 按首版范围预留 `WorkbookConverter` 接口；调用会明确返回 `CONVERSION_NOT_IMPLEMENTED`。后续转换约定输出新工作簿。
 
 三项设置默认开启。Keep aspect ratio / Fit image inside cell 可修改；设置变化通过 Refresh 应用到旧预览。Preserve original DISPIMG formula 在预览模式始终开启且不可取消。
 
@@ -87,6 +101,7 @@ ID 与单元格匹配 → found / missing / error
 
 - parser 不依赖 Office.js；所有 WPS 特有部件路径和 XML 结构解释集中在 `wps-image-parser.ts`。
 - `workbook-reader.ts` 只获取二进制，成功和失败路径都会尝试关闭文件句柄。
+- `getFileAsync`、`getSliceAsync`、`closeAsync` 每次回调等待上限 30 秒，不自动重试；取消/超时后迟到的文件句柄仍尝试关闭。Excel 批处理的 `context.sync()` 不能被中断，扫描取消在批次边界生效；解包取消在当前解析结束后生效，不承诺即时停止。
 - JSZip 解包，fast-xml-parser 解析并验证 XML；不使用 Python Runtime、VBA、COM、XLL、Excel-DNA、Windows-only API 或 React。
 - 同一 media 路径在一次解析中只转 Base64 一次，不持久保存工作簿或图片，不发送到服务器。
 - 外部 relationship 不下载；目标必须解析到 `xl/media/`。不允许 DTD / 自定义实体声明，歧义 ID / relationship 不随机挑选。
@@ -111,15 +126,18 @@ src/
     image-layout.ts           纯几何布局计算
     preview-identity.ts       唯一名称和所有权/位置判断
     preview-controller.ts     Show/Refresh 前重新扫描
+    workbook-converter.ts     独立转换接口与未实现状态
+    diagnostics.ts            不含工作簿内容的诊断报告
   types/wps.ts               公共数据类型
-  utils/                     XML、Base64、错误类型和文件大小限制
+  utils/                     XML、Base64、错误、取消、超时和文件大小限制
+scripts/diagnose-workbook.ts  本地只读真实 XLSX 诊断工具
 public/                      Ribbon 图标和本地帮助页
 tests/                       单元及流程测试、合成 OOXML fixtures
 manifest.xml                 XML manifest 与 Ribbon
 vite.config.ts               HTTPS 开发服务和静态构建
 ```
 
-解析结果使用 `Map`，重复引用共享一次解析的 Base64；不保留跨扫描资源缓存，Show/Refresh 每次读取最新快照。Convert 接口留待 Phase 4。
+解析结果使用 `Map`，重复引用共享一次解析的 Base64；不保留跨扫描资源缓存，Show/Refresh 每次读取最新快照。
 
 ## 检查与双平台验收
 
@@ -128,9 +146,13 @@ npm run typecheck
 npm test
 npm run build
 npm run validate:manifest
+npm run validate:manifest:production
+npm run diagnose:file -- "/absolute/path/sample.xlsx" "/absolute/path/new-report.json"
 ```
 
-测试夹具是代码生成的 OOXML 图片部件，**不是从真实 WPS 保存的样本**。自动测试覆盖分片读取、句柄释放、ID 映射、缺失及损坏资源、路径边界和大小限制。微软 manifest 验证仅验证清单，不等于实机测试。
+自动测试夹具是代码生成的 OOXML 图片部件，**不是从真实 WPS 保存的样本**。自动测试覆盖分片读取、句柄释放、ID 映射、缺失及损坏资源、路径边界、大小限制、取消/超时、诊断隐私及预览回滚。微软 manifest 验证仅验证清单，不等于实机测试。
+
+本地诊断工具直接用项目 parser 读取磁盘文件，统计 worksheet XML 中的直接 DISPIMG 调用，并核对读前/读后的 SHA-256；不会重存 XLSX。报告采用只创建新文件的方式，拒绝覆盖输入或已有报告。它不经过 Office.js，也不证明 Excel 导出的快照保留了 WPS 部件；共享公式的省略公式单元格不在该辅助工具的统计范围内。真实工作簿和诊断报告应留在仓库外，禁止提交客户数据。完整步骤和结果记录表见 [TESTING.md](TESTING.md)。
 
 Windows 和 macOS 各使用真实 WPS 工作簿副本执行：
 
@@ -154,7 +176,7 @@ Phase 3 还需在 Windows/macOS 各执行以下真实工作簿验收：
 
 本轮自动测试使用 Excel 模拟对象，不能证明真实 Excel 布局、原生锚点或保存行为一致。
 
-各阶段记录：[Phase 1](PHASE1.md)、[Phase 2](PHASE2.md)、[Phase 3](PHASE3.md)。
+各阶段记录：[Phase 1](PHASE1.md)、[Phase 2](PHASE2.md)、[Phase 3](PHASE3.md)、[Phase 4](PHASE4.md)。
 
 ## GitHub 与 Cloudflare 公共使用
 
@@ -170,6 +192,7 @@ Cloudflare 托管页面，Excel 通过 manifest 加载插件。小范围测试�
 
 ## 后续
 
-- **Phase 4**：Convert 接口和约定范围、完善异常处理与双平台验收。
+- 完成 Windows/macOS 原生 Excel 验收，记录实际版本、能力、布局和保存结果。
+- 单独设计并实现输出新工作簿的实际 Convert，不改变预览操作的只保留原公式约定。
 
 此项目与 WPS / Microsoft 没有官方关联。公开源码不自动授予开源许可；仓库许可由维护者另行选择。

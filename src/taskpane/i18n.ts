@@ -1,0 +1,132 @@
+export const en = {
+  badge: 'Image preview', intro: 'Preview WPS cell images in Excel while keeping your formulas.',
+  language: 'Language', auto: 'Follow Excel', detected: 'Detected:', images: 'WPS images',
+  sheets: 'Worksheets with images', parsed: 'Resources parsed', missing: 'Missing resources', errors: 'Resource errors',
+  scan: 'Scan Workbook', show: 'Show Images', refresh: 'Refresh Images', remove: 'Remove Preview Images',
+  convert: 'Convert Workbook', cancel: 'Cancel Scan / Read', diagnostics: 'Download Diagnostics', settings: 'Preview settings',
+  aspect: 'Keep aspect ratio', fit: 'Fit image inside cell', preserve: 'Preserve original DISPIMG formula (always)',
+  hint: 'Scan reads only. Show and Refresh add floating PNG/JPEG previews; saved workbooks keep them until removed. Avoid editing during an operation. You can cancel scanning and reading before image changes begin.',
+  conversion: 'Conversion is reserved for a future release. Show Images creates removable previews and always preserves DISPIMG formulas.',
+  privacy: 'Diagnostics contain Excel capabilities, counts and error codes. No workbook content or images are included; nothing is uploaded.',
+  connecting: 'Connecting to Excel…', connectionTimeout: 'Excel has not connected. Open this add-in inside Excel and check your connection.',
+  officeMissing: 'Office.js could not load. Check your network and reopen the add-in in Excel.',
+  excelOnly: 'Open this add-in inside Microsoft Excel to scan a workbook.',
+  scanUnsupported: 'This Excel version does not support ExcelApi 1.4. Please update Excel.',
+  connected: 'Connected to Excel · {platform}', scanOnly: 'Scanning only. Image previews require ExcelApi 1.10.',
+  initFailed: 'Could not initialize the Excel connection. Reopen the add-in.',
+  scanning: 'Scanning workbook…', scanProgress: 'Scanning {sheet} · {count} cells checked…',
+  reading: 'Scanning workbook and reading WPS images…', rendering: 'Showing images…', refreshing: 'Preparing replacement previews…',
+  removing: 'Removing plugin preview images…', cancelling: 'Cancelling… Waiting for the current read and releasing the file handle.',
+  scanComplete: 'Scan complete. {count} worksheets checked.', first100: 'Showing the first 100 matches.',
+  notChecked: 'Resources not checked:', noParts: 'This workbook snapshot has no WPS image part. Excel may not have preserved it.',
+  previewComplete: '{inserted} inserted · {existing} already shown · {removed} removed · {skipped} skipped.',
+  issueCount: '{count} issues; see details below.', preserved: 'Original formulas were preserved.',
+  workbook: 'Workbook', foundStatus: 'found', missingStatus: 'missing', errorStatus: 'error', renderedStatus: 'rendered', uncheckedStatus: 'not checked',
+  details: 'Technical details', results: 'Detected image cells', summary: 'Scan results',
+  currentVersion: 'Version {version}', updateAvailable: 'An updated build ({version}) is available.',
+  updateBusy: 'Finish the current operation before updating.', updateAction: 'Update task pane',
+  updateHint: 'Reloads this pane and clears its scan results. Existing worksheet previews stay in place.',
+  cancelledError: 'Operation cancelled. Original formulas were not changed.',
+  timeoutError: 'Excel did not respond in time. Close and reopen the task pane before retrying.',
+  fileError: 'Excel could not read or close the workbook file. Reopen the pane and retry.',
+  fileSizeError: 'The workbook is empty, invalid, or exceeds the 100 MiB limit.',
+  sliceError: 'Excel returned incomplete or invalid workbook data. Scan again.',
+  unsupportedHostError: 'This Excel host cannot read the compressed workbook. Use an updated desktop Excel on Windows or macOS.',
+  resourcesError: 'Image resources could not be checked. Existing previews were kept.',
+  zipError: 'The workbook is not a readable, unencrypted XLSX ZIP archive.',
+  xmlError: 'An XML part is invalid, ambiguous or contains a prohibited DTD.',
+  limitError: 'The workbook exceeds the supported resource count or decompressed size limit.',
+  pathError: 'An image resource has an unsafe or invalid archive path.',
+  missingError: 'The image ID, relationship or embedded image file could not be found.',
+  invalidImageError: 'The image resource is invalid, empty or cannot be read.',
+  duplicateError: 'An image ID or relationship is ambiguous; it was not selected.',
+  relationshipError: 'Only internal image relationships are supported.',
+  formatError: 'Preview supports PNG and JPEG only.',
+  shapesError: 'Image previews require ExcelApi 1.10. Update desktop Excel.',
+  protectedError: 'An affected worksheet is protected. Check its access settings before retrying.',
+  changedError: 'The worksheet or DISPIMG cell changed. Scan again.',
+  hiddenError: 'A hidden or zero-size cell was skipped. Unhide it and refresh.',
+  refreshPreflightError: 'Refresh stopped during preparation. Existing previews were kept; check the resource and worksheet details.',
+  refreshFailedError: 'Refresh failed. Old previews were kept, but some new previews may require cleanup. Check worksheet access before removing previews.',
+  cleanupError: 'A preview could not be removed. Check worksheet protection and retry; some preview changes may already have occurred.',
+  operationError: 'The operation did not complete. Some preview changes may have occurred. Check worksheet access and retry. Original formulas were not changed.',
+} as const;
+export type MessageKey = keyof typeof en;
+export type Locale = 'en' | 'zh-CN';
+export type LanguagePreference = 'auto' | Locale;
+export type MessageParams = Record<string, string | number>;
+export const zhCN: Record<MessageKey, string> = {
+  badge: '图片预览', intro: '在 Excel 中预览 WPS 单元格图片，并保留原始公式。',
+  language: '语言', auto: '跟随 Excel', detected: '已检测：', images: '张 WPS 图片',
+  sheets: '包含图片的工作表', parsed: '成功解析的资源', missing: '缺失资源', errors: '资源错误',
+  scan: '扫描工作簿', show: '显示图片', refresh: '刷新图片', remove: '移除预览图片', convert: '转换工作簿',
+  cancel: '取消扫描 / 读取', diagnostics: '下载诊断报告', settings: '预览设置',
+  aspect: '保持原始比例', fit: '图片适应单元格', preserve: '保留原始 DISPIMG 公式（始终启用）',
+  hint: '扫描只读取数据。显示和刷新会添加 PNG/JPEG 浮动预览图片，保存工作簿时会保留，直到手动移除。操作期间请勿编辑工作簿；开始修改图片前，可以取消扫描和读取。',
+  conversion: '正式转换将在后续版本提供。“显示图片”只创建可移除的预览，并始终保留 DISPIMG 公式。',
+  privacy: '诊断报告只包含 Excel 能力、计数和错误码，不包含工作簿内容或图片，也不会上传数据。',
+  connecting: '正在连接 Excel…', connectionTimeout: '尚未连接 Excel。请在 Excel 内打开此加载项，并检查网络连接。',
+  officeMissing: '无法加载 Office.js。请检查网络，然后在 Excel 中重新打开加载项。',
+  excelOnly: '请在 Microsoft Excel 内打开加载项，以扫描工作簿。',
+  scanUnsupported: '当前 Excel 不支持 ExcelApi 1.4，请更新 Excel。',
+  connected: '已连接 Excel · {platform}', scanOnly: '目前仅支持扫描；图片预览需要 ExcelApi 1.10。',
+  initFailed: '无法初始化 Excel 连接，请重新打开加载项。',
+  scanning: '正在扫描工作簿…', scanProgress: '正在扫描 {sheet} · 已检查 {count} 个单元格…',
+  reading: '正在扫描工作簿并读取 WPS 图片…', rendering: '正在显示图片…', refreshing: '正在准备替换预览图片…',
+  removing: '正在移除插件生成的预览图片…', cancelling: '正在取消… 等待当前读取结束并释放文件句柄。',
+  scanComplete: '扫描完成，已检查 {count} 张工作表。', first100: '仅展示前 100 个匹配位置。',
+  notChecked: '资源尚未检查：', noParts: '当前工作簿快照没有 WPS 图片部件，Excel 可能没有保留这些部件。',
+  previewComplete: '新增 {inserted} 张 · 已存在 {existing} 张 · 移除 {removed} 张 · 跳过 {skipped} 张。',
+  issueCount: '发现 {count} 个问题，详情见下方。', preserved: '原始公式已保留。',
+  workbook: '工作簿', foundStatus: '已找到', missingStatus: '缺失', errorStatus: '错误', renderedStatus: '已显示', uncheckedStatus: '未检查',
+  details: '技术详情', results: '检测到的图片单元格', summary: '扫描结果',
+  currentVersion: '版本 {version}', updateAvailable: '检测到新版构建（{version}）。',
+  updateBusy: '请等待当前操作结束后更新。', updateAction: '更新任务窗格',
+  updateHint: '重新加载此窗格并清空扫描结果；工作表中已有的预览图片会保留。',
+  cancelledError: '操作已取消，原始公式未修改。', timeoutError: 'Excel 响应超时，请关闭并重新打开任务窗格后重试。',
+  fileError: 'Excel 无法读取或关闭工作簿文件，请重新打开窗格后重试。',
+  fileSizeError: '工作簿为空、无效，或超过 100 MiB 限制。', sliceError: 'Excel 返回的工作簿数据不完整或无效，请重新扫描。',
+  unsupportedHostError: '当前 Excel 无法读取压缩工作簿，请使用更新后的 Windows 或 macOS 桌面版 Excel。',
+  resourcesError: '无法检查图片资源，已有预览已保留。', zipError: '工作簿不是可读取的、未加密的 XLSX ZIP 文件。',
+  xmlError: 'XML 部件无效、存在歧义，或含有禁止的 DTD 声明。', limitError: '工作簿资源数量或解压大小超出支持范围。',
+  pathError: '图片资源包含不安全或无效的压缩包路径。', missingError: '找不到图片 ID、关联记录或内嵌图片文件。',
+  invalidImageError: '图片资源无效、为空或无法读取。', duplicateError: '图片 ID 或关联记录存在歧义，已跳过选择。',
+  relationshipError: '仅支持工作簿内部的图片关联。', formatError: '图片预览目前仅支持 PNG 和 JPEG。',
+  shapesError: '图片预览需要 ExcelApi 1.10，请更新桌面版 Excel。',
+  protectedError: '相关工作表受保护，请检查访问设置后重试。', changedError: '工作表或 DISPIMG 单元格已发生变化，请重新扫描。',
+  hiddenError: '已跳过隐藏或零尺寸单元格；取消隐藏后可刷新图片。',
+  refreshPreflightError: '刷新在准备阶段停止，已有预览已保留，请检查图片资源和工作表详情。',
+  refreshFailedError: '刷新失败，旧预览已保留，但部分新预览可能仍需清理。请检查工作表访问权限后再移除预览。',
+  cleanupError: '无法移除某张预览图片，请检查工作表保护后重试；部分预览可能已经发生变化。',
+  operationError: '操作未完成，部分预览可能已经发生变化。请检查工作表访问权限后重试。原始公式未修改。',
+};
+export function languagePreference(value: unknown): LanguagePreference {
+  return value === 'en' || value === 'zh-CN' ? value : 'auto';
+}
+export function resolveLocale(preference: LanguagePreference, officeLanguage?: string, browserLanguage = 'en'): Locale {
+  if (preference !== 'auto') return preference;
+  return (officeLanguage || browserLanguage).toLowerCase().startsWith('zh') ? 'zh-CN' : 'en';
+}
+/** Replacements are plain text and are never interpreted as HTML. */
+export function translate(locale: Locale, key: MessageKey, params: MessageParams = {}): string {
+  return (locale === 'zh-CN' ? zhCN[key] : en[key]).replace(/\{(\w+)\}/g, (placeholder, name: string) =>
+    params[name] === undefined ? placeholder : String(params[name]));
+}
+const errorKeys: Record<string, MessageKey> = {
+  OPERATION_CANCELLED: 'cancelledError', OFFICE_TIMEOUT: 'timeoutError', OFFICE_FILE: 'fileError',
+  FILE_SIZE: 'fileSizeError', INVALID_SLICE: 'sliceError', INCOMPLETE_FILE: 'sliceError',
+  UNSUPPORTED_HOST: 'unsupportedHostError', RESOURCES_UNAVAILABLE: 'resourcesError', RESOURCE_READ_FAILED: 'resourcesError',
+  INVALID_XLSX: 'zipError', INVALID_XML: 'xmlError', RESOURCE_LIMIT: 'limitError', UNSAFE_ZIP_PATH: 'pathError',
+  INVALID_TARGET: 'pathError', INVALID_ZIP_ENTRY: 'invalidImageError', INVALID_IMAGE: 'invalidImageError',
+  UNKNOWN_MEDIA: 'invalidImageError', EMPTY_MEDIA: 'invalidImageError', INVALID_MEDIA: 'invalidImageError',
+  MISSING_RELS: 'missingError', MISSING_REL: 'missingError', MISSING_MEDIA: 'missingError', MISSING_IMAGE: 'missingError',
+  DUPLICATE_ID: 'duplicateError', DUPLICATE_REL: 'duplicateError', UNSUPPORTED_REL: 'relationshipError',
+  UNSUPPORTED_IMAGE: 'formatError', SHAPES_UNSUPPORTED: 'shapesError', PROTECTED_SHEET: 'protectedError',
+  SHEET_CHANGED: 'changedError', CELL_CHANGED: 'changedError', HIDDEN_CELL: 'hiddenError',
+  REFRESH_UNRESOLVED: 'refreshPreflightError', REFRESH_PREFLIGHT: 'refreshPreflightError', REFRESH_FAILED: 'refreshFailedError',
+  CLEANUP_FAILED: 'cleanupError', CONVERSION_NOT_IMPLEMENTED: 'conversion',
+};
+export function errorText(locale: Locale, code: string, original?: string): string {
+  if (locale === 'en' && original) return original;
+  return translate(locale, errorKeys[code] ?? 'operationError');
+}

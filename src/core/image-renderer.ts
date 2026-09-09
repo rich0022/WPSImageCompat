@@ -5,7 +5,7 @@ import { isPreviewShape, matchesPreview, PREVIEW_MARKER, previewName } from './p
 import { parseDispimgFormula } from './dispimg-formula';
 import { WorkbookError } from '../utils/errors';
 
-export interface PreviewIssue { location: string; message: string }
+export interface PreviewIssue { location: string; message: string; code?: string }
 export interface PreviewResult { inserted: number; existing: number; removed: number; skipped: number; issues: PreviewIssue[] }
 export type PreviewMode = 'show' | 'refresh';
 export function canRenderImages(): boolean {
@@ -72,7 +72,7 @@ export async function renderImages(
         const box = { left: bounds.left, top: bounds.top, width: bounds.width, height: bounds.height };
         if (cell.rowHidden || cell.columnHidden || box.width <= 0 || box.height <= 0) {
           result.skipped++;
-          result.issues.push({ location, message: 'Hidden or zero-size cell was skipped. Unhide it and refresh to display its image.' });
+          result.issues.push({ location, code: 'HIDDEN_CELL', message: 'Hidden or zero-size cell was skipped. Unhide it and refresh to display its image.' });
           continue;
         }
         const existing = sheet.shapes.items.find(shape => !claimed.has(`${sheet.name}:${shape.id}`) && matchesPreview(shape, mapping.cell.imageId, box));
@@ -81,7 +81,7 @@ export async function renderImages(
       } catch (error) {
         if (mode === 'refresh') throw new WorkbookError('REFRESH_PREFLIGHT', `Refresh stopped at ${location}: ${message(error)} Existing previews were kept.`);
         result.skipped++;
-        result.issues.push({ location, message: message(error) });
+        result.issues.push({ location, code: error instanceof WorkbookError ? error.code : 'OPERATION_FAILED', message: message(error) });
       }
     }
     const created: Created[] = [];
@@ -135,6 +135,7 @@ export async function renderImages(
         const cleaned = added ? await cleanup([added]) : true;
         result.skipped++;
         result.issues.push({ location: `${target.sheet.name}!${target.mapping.cell.address}`,
+          code: !cleaned ? 'CLEANUP_FAILED' : error instanceof WorkbookError ? error.code : 'OPERATION_FAILED',
           message: `${message(error)}${cleaned ? '' : ' A temporary preview could not be removed.'}` });
       }
       onProgress?.(++completed, targets.length);
@@ -143,7 +144,7 @@ export async function renderImages(
     if (mode === 'refresh') {
       for (const shape of oldShapes) {
         try { shape.delete(); await context.sync(); result.removed++; }
-        catch { result.issues.push({ location: 'Workbook', message: 'An old preview could not be removed. Run Refresh again after fixing worksheet access.' }); }
+        catch { result.issues.push({ location: 'Workbook', code: 'CLEANUP_FAILED', message: 'An old preview could not be removed. Run Refresh again after fixing worksheet access.' }); }
       }
     }
     return result;
@@ -163,7 +164,7 @@ export async function removePreviewImages(): Promise<PreviewResult> {
     for (const sheet of sheets.items) {
       for (const shape of sheet.shapes.items.filter(isPreviewShape)) {
         try { shape.delete(); await context.sync(); result.removed++; }
-        catch { result.skipped++; result.issues.push({ location: sheet.name, message: 'A preview could not be removed. Check worksheet protection.' }); }
+        catch { result.skipped++; result.issues.push({ location: sheet.name, code: 'CLEANUP_FAILED', message: 'A preview could not be removed. Check worksheet protection.' }); }
       }
     }
     return result;

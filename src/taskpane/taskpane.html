@@ -8,28 +8,41 @@
 </head>
 <body>
   <main>
-    <header><span class="badge">PHASE 3 · PREVIEW</span><h1>WPS Image Compat</h1>
-      <p>Preview WPS cell images in Excel while keeping your formulas.</p></header>
+    <header><span class="badge" data-i18n="badge">Image preview</span><h1>WPS Image Compat</h1>
+      <p data-i18n="intro">Preview WPS cell images in Excel while keeping your formulas.</p></header>
+    <div class="language-row"><label for="language" data-i18n="language">Language</label>
+      <select id="language"><option value="auto" data-i18n="auto">Follow Excel</option><option value="zh-CN">简体中文</option><option value="en">English</option></select>
+    </div>
+    <p id="app-version" class="hint"></p>
+    <section id="update-panel" hidden>
+      <p id="update-status" role="status" aria-live="polite"></p>
+      <button id="apply-update" data-i18n="updateAction" disabled>Update task pane</button>
+      <p class="hint" data-i18n="updateHint">Reloads this pane and clears its scan results. Existing worksheet previews stay in place.</p>
+    </section>
     <p id="host-status" role="status">Connecting to Excel…</p>
-    <section class="summary" aria-label="Scan results">
-      <h2>Detected: <strong id="image-count">—</strong> WPS images</h2>
-      <dl><div><dt>Worksheets with images</dt><dd id="sheet-count">—</dd></div>
-        <div><dt>Resources parsed</dt><dd id="parsed-count">—</dd></div>
-        <div><dt>Missing resources</dt><dd id="missing-count">—</dd></div><div><dt>Resource errors</dt><dd id="error-count">—</dd></div></dl>
+    <section class="summary" aria-label="Scan results" data-i18n-label="summary">
+      <h2><span data-i18n="detected">Detected:</span> <strong id="image-count">—</strong> <span data-i18n="images">WPS images</span></h2>
+      <dl><div><dt data-i18n="sheets">Worksheets with images</dt><dd id="sheet-count">—</dd></div>
+        <div><dt data-i18n="parsed">Resources parsed</dt><dd id="parsed-count">—</dd></div>
+        <div><dt data-i18n="missing">Missing resources</dt><dd id="missing-count">—</dd></div><div><dt data-i18n="errors">Resource errors</dt><dd id="error-count">—</dd></div></dl>
     </section>
     <div class="actions">
-      <button id="scan" disabled>Scan Workbook</button>
-      <button id="show" disabled>Show Images</button><button id="refresh" disabled>Refresh Images</button>
-      <button id="remove" disabled>Remove Preview Images</button><button disabled>Convert Workbook</button>
+      <button id="scan" data-i18n="scan" disabled>Scan Workbook</button>
+      <button id="show" data-i18n="show" disabled>Show Images</button><button id="refresh" data-i18n="refresh" disabled>Refresh Images</button>
+      <button id="remove" data-i18n="remove" disabled>Remove Preview Images</button><button id="convert" data-i18n="convert" aria-describedby="conversion-note" disabled>Convert Workbook</button>
+      <button id="cancel" data-i18n="cancel" disabled>Cancel Scan / Read</button>
+      <button id="diagnostics" data-i18n="diagnostics" disabled>Download Diagnostics</button>
     </div>
-    <fieldset id="preview-settings" disabled><legend>Preview settings</legend>
-      <label><input id="keep-aspect-ratio" type="checkbox" checked /> Keep aspect ratio</label>
-      <label><input id="fit-inside-cell" type="checkbox" checked /> Fit image inside cell</label>
-      <label><input id="preserve-formula" type="checkbox" checked disabled /> Preserve original DISPIMG formula (always)</label>
+    <fieldset id="preview-settings" disabled><legend data-i18n="settings">Preview settings</legend>
+      <label><input id="keep-aspect-ratio" type="checkbox" checked /> <span data-i18n="aspect">Keep aspect ratio</span></label>
+      <label><input id="fit-inside-cell" type="checkbox" checked /> <span data-i18n="fit">Fit image inside cell</span></label>
+      <label><input id="preserve-formula" type="checkbox" checked disabled /> <span data-i18n="preserve">Preserve original DISPIMG formula (always)</span></label>
     </fieldset>
-    <p class="hint">Scan reads only. Show and Refresh add floating PNG/JPEG preview images; saved workbooks keep them until you remove them. Avoid editing during an operation. Convert is not available yet.</p>
+    <p class="hint" data-i18n="hint"></p>
+    <p id="conversion-note" class="hint" data-i18n="conversion"></p>
+    <p class="hint" data-i18n="privacy"></p>
     <p id="scan-status" role="status" aria-live="polite"></p>
-    <ul id="results" aria-label="Detected image cells"></ul>
+    <ul id="results" aria-label="Detected image cells" data-i18n-label="results"></ul>
   </main>
   <script type="module" src="./taskpane.ts"></script>
 </body>

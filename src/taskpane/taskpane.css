@@ -16,6 +16,13 @@ button { padding: 11px; border: 1px solid #c5d4cb; border-radius: 6px; font: inh
 #scan { background: #176442; color: white; border-color: #176442; cursor: pointer; }
 button:disabled { opacity: .55; cursor: not-allowed !important; }
 button:focus-visible, input:focus-visible { outline: 3px solid #287bea; outline-offset: 3px; }
+select:focus-visible { outline: 3px solid #287bea; outline-offset: 3px; }
+.language-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+select { max-width: 65%; padding: 6px; border: 1px solid #c5d4cb; border-radius: 6px; font: inherit; background: white; }
+#update-panel { border: 1px solid #bbd6c8; background: #e7f0eb; border-radius: 8px; padding: 12px; }
+#update-panel[hidden] { display: none; }
+details { margin: 6px 0; }
+summary { cursor: pointer; }
 fieldset { margin: 20px 0 0; border: 1px solid #c5d4cb; border-radius: 6px; padding: 12px; }
 legend { font-size: 12px; }
 label { display: flex; align-items: center; gap: 6px; margin: 8px 0; font-size: 12px; }

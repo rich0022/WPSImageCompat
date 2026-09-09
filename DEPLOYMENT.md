@@ -68,6 +68,8 @@ npm run deploy
 3. 任务窗格返回 text/html，不应带阻止 Excel 嵌入的 X-Frame-Options / CSP frame-ancestors 限制。
 4. 在 Excel 中换用生产 manifest，停止本地开发服务器后仍能打开插件。
 5. 实际 Show/Refresh/Remove 行为仍按 README 的 Windows/macOS 真实文件矩阵验收。网页可访问不等于 Excel 兼容性通过。
+6. `/version.json` 应返回 JSON 和 `Cache-Control: no-store`；其中 buildId 必须与本次打包的任务窗格脚本一致。HTML 使用 no-cache，带哈希的脚本文件随构建更新。不要单独发布版本文件，必须原子发布整个 dist。
+7. 0.5.0 起，已有窗格在发现不同构建 ID 后提示用户刷新，忙碌时禁用更新。旧版本第一次升级须手动重开窗格。XML 清单权限或 Ribbon 更改仍需单独更新清单。
 
 ## 依赖说明
 

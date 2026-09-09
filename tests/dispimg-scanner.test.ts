@@ -1,6 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { scanWorkbook } from '../src/core/dispimg-scanner';
+test('pre-cancelled scan stops before accessing Excel', async () => {
+  const controller = new AbortController();
+  controller.abort();
+  await assert.rejects(scanWorkbook(undefined, controller.signal), { code: 'OPERATION_CANCELLED' });
+});
 
 test('scans offset and hidden sheets, skips empty sheets and formula-like text, remains read-only', async () => {
   const formula = '=DISPIMG("ID_A",1)';

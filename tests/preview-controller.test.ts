@@ -3,6 +3,19 @@ import assert from 'node:assert/strict';
 import { showWorkbookImages } from '../src/core/preview-controller';
 import { DEFAULT_PREVIEW_SETTINGS } from '../src/core/image-layout';
 const scan = { cells: [], worksheetCount: 0, scannedWorksheetCount: 1 };
+test('cancelled detection never mutates Shapes; rendering announces its non-cancellable boundary', async () => {
+  const controller = new AbortController();
+  await assert.rejects(showWorkbookImages('refresh', DEFAULT_PREVIEW_SETTINGS, undefined, {
+    detect: async () => { controller.abort(); return { scan, mappings: [] }; },
+    render: async () => assert.fail('must not change Shapes'),
+  }, { signal: controller.signal }), { code: 'OPERATION_CANCELLED' });
+  const order: string[] = [];
+  await showWorkbookImages('show', DEFAULT_PREVIEW_SETTINGS, undefined, {
+    detect: async () => ({ scan, mappings: [] }),
+    render: async () => { order.push('render'); return { inserted: 0, existing: 0, removed: 0, skipped: 0, issues: [] }; },
+  }, { onRendering: () => { order.push('lock cancellation'); } });
+  assert.deepEqual(order, ['lock cancellation', 'render']);
+});
 test('freshly detects on each Show/Refresh and forwards settings', async () => {
   let scans = 0, renders = 0;
   const services = {

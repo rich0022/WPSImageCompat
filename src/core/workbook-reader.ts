@@ -1,4 +1,6 @@
+import { throwIfCancelled } from '../utils/cancellation';
 import { WorkbookError } from '../utils/errors';
+import { officeAsync } from '../utils/office-async';
 
 import { MAX_WORKBOOK_BYTES } from '../utils/limits';
 const SLICE_BYTES = 1024 * 1024;
@@ -12,10 +14,12 @@ export interface WorkbookFile {
 export type WorkbookFileSource = () => Promise<WorkbookFile>;
 
 /** Testable byte assembly with guaranteed handle close after success or failure. */
-export async function readCompressedFile(open: WorkbookFileSource): Promise<Uint8Array> {
+export async function readCompressedFile(open: WorkbookFileSource, signal?: AbortSignal): Promise<Uint8Array> {
+  throwIfCancelled(signal);
   const file = await open();
   let failed = false;
   try {
+    throwIfCancelled(signal);
     if (!Number.isSafeInteger(file.size) || file.size <= 0 || file.size > MAX_WORKBOOK_BYTES ||
         !Number.isSafeInteger(file.sliceCount) || file.sliceCount < 1 || file.sliceCount > file.size) {
       throw new WorkbookError('FILE_SIZE', 'Workbook is empty, invalid, or exceeds the 100 MiB limit.');
@@ -23,7 +27,9 @@ export async function readCompressedFile(open: WorkbookFileSource): Promise<Uint
     const bytes = new Uint8Array(file.size);
     let offset = 0;
     for (let index = 0; index < file.sliceCount; index++) {
+      throwIfCancelled(signal);
       const slice = await file.getSlice(index);
+      throwIfCancelled(signal);
       const data = slice.data;
       if (!(data instanceof Uint8Array) &&
           !(Array.isArray(data) && data.every(value => Number.isInteger(value) && value >= 0 && value <= 255))) {
@@ -46,15 +52,6 @@ export async function readCompressedFile(open: WorkbookFileSource): Promise<Uint
   }
 }
 
-function officeResult<T>(operation: (callback: (result: Office.AsyncResult<T>) => void) => void): Promise<T> {
-  return new Promise((resolve, reject) => {
-    operation(result => {
-      if (result.status === Office.AsyncResultStatus.Succeeded) resolve(result.value);
-      else reject(new WorkbookError('OFFICE_FILE', `Excel file operation failed (${result.error?.code ?? 'unknown'}).`));
-    });
-  });
-}
-
 export function canReadWorkbook(): boolean {
   return typeof Office !== 'undefined' &&
     Office.context.requirements.isSetSupported('CompressedFile', '1.1') &&
@@ -62,17 +59,23 @@ export function canReadWorkbook(): boolean {
 }
 
 /** Only acquires the current workbook binary; it knows nothing about WPS XML. */
-export async function readWorkbook(): Promise<Uint8Array> {
+export async function readWorkbook(options: { signal?: AbortSignal } = {}): Promise<Uint8Array> {
   if (!canReadWorkbook()) {
     throw new WorkbookError('UNSUPPORTED_HOST', 'This Excel host cannot read a compressed workbook. Use an updated desktop Excel on Windows or macOS.');
   }
   return readCompressedFile(async () => {
-    const file = await officeResult<Office.File>(callback =>
-      Office.context.document.getFileAsync(Office.FileType.Compressed, { sliceSize: SLICE_BYTES }, callback));
+    const file = await officeAsync<Office.File>(callback =>
+      Office.context.document.getFileAsync(Office.FileType.Compressed, { sliceSize: SLICE_BYTES }, callback), {
+        signal: options.signal,
+        onLateSuccess: lateFile => {
+          // A delayed successful acquisition still owns a handle and must be closed.
+          void officeAsync<void>(callback => lateFile.closeAsync(callback)).catch(() => {});
+        },
+      });
     return {
       size: file.size, sliceCount: file.sliceCount,
-      getSlice: index => officeResult<Office.Slice>(callback => file.getSliceAsync(index, callback)),
-      close: async () => { await officeResult<void>(callback => file.closeAsync(callback)); },
+      getSlice: index => officeAsync<Office.Slice>(callback => file.getSliceAsync(index, callback), { signal: options.signal }),
+      close: async () => { await officeAsync<void>(callback => file.closeAsync(callback)); },
     };
-  });
+  }, options.signal);
 }

@@ -11,7 +11,7 @@ if (manifest.includes('localhost') || XMLValidator.validate(manifest) !== true) 
   throw new Error('Production manifest must be valid XML without localhost URLs.');
 }
 for (const path of [
-  'src/taskpane/taskpane.html', 'support.html', 'index.html',
+  'src/taskpane/taskpane.html', 'support.html', 'index.html', 'version.json',
   'assets/icon-16.png', 'assets/icon-32.png', 'assets/icon-80.png',
 ]) {
   await access(new URL(`dist/${path}`, root));

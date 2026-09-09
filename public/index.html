@@ -14,14 +14,14 @@
   </style>
 </head>
 <body><main>
-  <p>PHASE 3 · 预览版</p>
+  <p>0.5.0 · 预览版</p>
   <h1>WPS Image Compat for Excel</h1>
   <p>在 Windows 和 macOS 桌面版 Excel 中扫描 WPS DISPIMG 公式，显示可移除的 PNG/JPEG 图片预览，并保留原始公式。</p>
   <p><a class="download" href="/manifest.xml" download="WPSImageCompat.xml">下载 Excel 加载项清单</a></p>
   <p>这是供 Excel 安装的 XML 清单。网站本身不能读取工作簿；安装后无需运行本地开发服务。</p>
   <section><h2>macOS 安装</h2>
     <ol><li>下载上方清单，将它保存到 <code>~/Library/Containers/com.microsoft.Excel/Data/Documents/wef/</code>。目录不存在时先创建。</li>
-    <li>在 Excel 的「插入 → 加载项 → 我的加载项」中选择本插件，必要时重启 Excel。</li>
+    <li>保存工作并完全退出、重新打开 Excel，从「开始 → 加载项」菜单选择本插件。部分旧版界面使用「插入」下的加载项菜单，请以实际界面为准。侧载插件不一定出现在账户/商店的「我的加载项」窗口中，也不属于「开发工具 → Excel 加载项」。</li>
     <li>打开工作簿，从 WPS Image Compat 功能区打开任务窗格，先 Scan Workbook，再 Show Images。</li></ol>
   </section>
   <section><h2>Windows 安装</h2>
@@ -29,6 +29,7 @@
     <p><a href="https://learn.microsoft.com/en-us/office/dev/add-ins/testing/create-a-network-shared-folder-catalog-for-task-pane-and-content-add-ins">微软 Windows 侧载步骤</a></p>
   </section>
   <section><h2>使用说明</h2>
+    <p>任务窗格支持简体中文和英文，自动跟随 Excel，也可手动切换。发布新版后会提示更新；正在处理图片时不会强制刷新。首次从旧版升级，请关闭并重新打开任务窗格。</p>
     <p>图片操作需要 ExcelApi 1.10。Show 显示预览，Refresh 重新适配单元格，Remove Preview Images 仅清理插件标记图片。预览是会随工作簿保存的浮动图片，Convert 尚未实现。</p>
     <p>请先用文件副本测试。真实 WPS 文件兼容性及 Windows/macOS 显示效果仍需验收；如果 Excel 已丢弃 WPS 图片资源，插件无法恢复不存在的资源。</p>
     <p><a href="https://github.com/rich0022/WPSImageCompat#readme">完整说明与源代码</a> · <a href="/support.html">帮助</a></p>

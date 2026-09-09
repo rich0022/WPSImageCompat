@@ -12,6 +12,24 @@ function mockFile(overrides: Partial<WorkbookFile> = {}) {
     closes: () => closes,
   };
 }
+test('cancelling between slices stops further reads and closes even if cleanup fails', async () => {
+  const controller = new AbortController();
+  let reads = 0;
+  let closes = 0;
+  const mock = mockFile({ getSlice: async index => {
+    reads++; controller.abort(); return { index, size: 2, data: [1, 2] };
+  }, close: async () => { closes++; throw new Error('cleanup failure'); } });
+  await assert.rejects(readCompressedFile(async () => mock.file, controller.signal), { code: 'OPERATION_CANCELLED' });
+  assert.equal(reads, 1);
+  assert.equal(closes, 1);
+});
+test('cancelling while acquiring a file closes it before reading', async () => {
+  const controller = new AbortController();
+  const mock = mockFile({ getSlice: async () => assert.fail('must not read') });
+  await assert.rejects(readCompressedFile(async () => { controller.abort(); return mock.file; }, controller.signal),
+    { code: 'OPERATION_CANCELLED' });
+  assert.equal(mock.closes(), 1);
+});
 test('assembles slices in order and closes the file exactly once', async () => {
   const mock = mockFile();
   assert.deepEqual(await readCompressedFile(async () => mock.file), new Uint8Array([1, 2, 3, 4]));
