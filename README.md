@@ -4,7 +4,7 @@
 
 仓库：[rich0022/WPSImageCompat](https://github.com/rich0022/WPSImageCompat)
 
-当前版本 **0.6.0**：新增只读兼容检查和本地详细报告，保留简体中文/英文界面与发布更新提示。支持扫描、显示、刷新、移除预览、扫描/读取取消和诊断导出；不删除或替换原公式。Convert 已预留独立接口，实际转换尚未实现。Windows/macOS 原生 Excel 验收仍待完成，不能把单元测试视为双平台认证。
+当前版本 **0.7.0**：兼容检查按问题类型汇总，并可定位到首个匹配单元格；保留只读检查、本地详细报告、简体中文/英文界面与发布更新提示。支持扫描、显示、刷新、移除预览、扫描/读取取消和诊断导出；不删除或替换原公式。Convert 已预留独立接口，实际转换尚未实现。Windows/macOS 原生 Excel 验收仍待完成，不能把单元测试视为双平台认证。
 
 ## 现在怎样使用
 
@@ -18,11 +18,19 @@ npm run dev
 
 首次证书安装可能触发系统信任提示。开发服务固定使用 HTTPS localhost:3000。构建不会安装证书。
 
-### macOS 加载
+### 线上团队版安装（推荐）
+
+访问 [生产安装页](https://wpsimagecompat.fogce.workers.dev/) 下载生产清单，或直接下载 [manifest.xml](https://wpsimagecompat.fogce.workers.dev/manifest.xml)。生产清单中的任务窗格、图标、帮助页和版本信息均指向 `wpsimagecompat.fogce.workers.dev`，不需要 Node.js、本地开发服务或开发证书。
+
+macOS 上将下载文件替换为 `~/Library/Containers/com.microsoft.Excel/Data/Documents/wef/wps-image-compat.xml`，然后完全退出并重启 Excel。Windows 测试环境从共享加载项目录安装同一份生产清单；组织内多人使用时，由 Microsoft 365 管理员通过集中部署分发该生产清单。每位使用者都必须完成一次安装；Cloudflare 只能更新已经使用线上 URL 的任务窗格，不能远程替换用户本机的侧载清单。
+
+线上版本打开、获得焦点及可见状态下每 5 分钟检查一次同源 `version.json`。有新构建时窗格出现“更新任务窗格”；点击后只刷新窗格，已有工作簿数据和预览图片不变。清单版本或 Ribbon/权限变更仍需重新安装清单。
+
+### 本地开发版加载
 
 1. 启动服务并信任开发证书。
 2. 将根目录 `manifest.xml` 复制到 `~/Library/Containers/com.microsoft.Excel/Data/Documents/wef/wps-image-compat.xml`，不存在的目录先创建。升级时替换旧清单。
-3. 保存当前工作并完全退出、重新打开 Excel，再打开工作簿。从 **开始（Home）→ 加载项（Add-ins）**菜单选择本插件，本项目用户已在此入口找到它。部分旧界面也可能提供“插入 → 我的加载项”旁的小箭头菜单，请以实际界面为准。侧载插件不一定出现在账户/商店对话框中；“开发工具 → Excel 加载项”管理传统加载项，不用于本项目。
+3. 保存当前工作并完全退出、重新打开 Excel，再打开工作簿。从 **开始（Home）→ 加载项（Add-ins）**菜单选择本插件。部分旧界面也可能提供“插入 → 我的加载项”旁的小箭头菜单，请以实际界面为准。侧载插件不一定出现在账户/商店对话框中；“开发工具 → Excel 加载项”管理传统加载项，不用于本项目。
 4. 从 **WPS Image Compat** Ribbon 标签打开任务窗格。
 5. 打开 WPS 工作簿，看到 `Connected to Excel` 后点击 **Scan Workbook**。
 
@@ -53,7 +61,7 @@ npm run dev
 
 ## 0.6 兼容性检查
 
-在任务窗格点击 **检查兼容性 / Check Compatibility**，等待报告生成。这与图片扫描是独立操作：即使没有 DISPIMG，也会尝试读取文件快照以盘点日期系统和外部引用。
+在任务窗格点击 **检查兼容性 / Check Compatibility**，等待报告生成。这与图片扫描是独立操作：即使没有 DISPIMG，也会尝试读取文件快照以盘点日期系统和外部引用。页面按“问题类型 + 判断状态”汇总为一行；存在实时单元格位置时，点击“定位到”会激活工作表并选择第一个匹配单元格，不修改任何值、公式或图片。详细下载继续逐条保留发现内容。
 
 - 公式：记录 Excel 返回的公式错误、`_xlfn` / `_xlws` 函数标记与 DISPIMG；错误不自动归因于 WPS。合法 `@`、表格列引用和类似公式的文本不会仅因外观被判错。
 - 引用：列出单元格中的显式外部工作簿引用、`#REF!`，以及 `xl/workbook.xml` 声明的外部引用 ID。只做依赖盘点，不解析外部链接目标关系、不访问目标，也不判断目标文件是否存在。
@@ -64,7 +72,7 @@ npm run dev
 
 范围不包括定义名称、INDIRECT 中的文本目标、连接、图表、宏、布局或日期值推断；当前单元格与文件快照不是同一时刻的原子快照，扫描期间请勿编辑。没有发现问题不等于文件完全兼容；检查与下载都不修改工作簿。转换接口继续保留，本版不增加自动修复。
 
-本版文件清单、验证结果与限制见 [RELEASE_0_6.md](RELEASE_0_6.md)。扩展方向见 [COMPATIBILITY_ROADMAP.md](COMPATIBILITY_ROADMAP.md)。
+本版文件清单、验证结果与限制见 [RELEASE_0_7.md](RELEASE_0_7.md)。扩展方向见 [COMPATIBILITY_ROADMAP.md](COMPATIBILITY_ROADMAP.md)。
 
 ## 扫描结果
 
@@ -199,7 +207,7 @@ Phase 3 还需在 Windows/macOS 各执行以下真实工作簿验收：
 
 Cloudflare 的 Worker → Settings → Build 设置：生产分支 `main`，构建命令 `npm run build`，部署命令 `npx wrangler deploy`，根目录为仓库根目录。配置来自仓库的 `wrangler.jsonc`，直接部署 `dist/`，不会进入 Vite 自动改写流程，也不需要 Cloudflare Vite 插件。
 
-构建结束会生成 `dist/manifest.xml`，其中全部 URL 指向生产域名；根目录 `manifest.xml` 继续用于 localhost 开发。网站首页提供安装说明和生产清单下载。安装生产版时替换旧开发版清单，两者使用相同加载项 ID。
+构建结束会生成 `dist/manifest.xml`，其中全部 URL 指向生产域名；根目录 `manifest.xml` 继续用于 localhost 开发。网站首页提供安装说明和生产清单下载。安装生产版时替换旧开发版清单，两者使用相同加载项 ID。线上任务窗格可在后续发布中自行更新；本地 localhost 清单不会连接线上版本服务。
 
 本地验证可运行 `npm run deploy:check`，实际发布可运行 `npm run deploy`（需要对应 Cloudflare 账号权限）。部署步骤、验收与排错见 [DEPLOYMENT.md](DEPLOYMENT.md)。配置和 dry run 通过不等于生产部署成功，应核对线上入口。
 

@@ -1,15 +1,28 @@
 import { throwIfCancelled } from '../../utils/cancellation';
 import { cellAddress } from '../dispimg-formula';
 import { analyzeFormula } from './formula-rules';
-import { MAX_FINDINGS, type CellScan } from './types';
+import { MAX_FINDINGS, type CellScan, type Finding, type FindingSummary } from './types';
 
 export const MAX_SCAN_CELLS = 1_000_000;
 /** Both dimensions are tiled. No range write or calculation is performed. */
 export async function scanCompatibilityCells(signal?: AbortSignal,
   onProgress?: (count: number) => void): Promise<CellScan> {
   throwIfCancelled(signal);
-  const result: CellScan = { findings: [], findingCount: 0, confirmedCount: 0, riskCount: 0,
+  const result: CellScan = { findings: [], summaries: [], findingCount: 0, confirmedCount: 0, riskCount: 0,
     scannedCells: 0, scannedWorksheets: 0, totalWorksheets: 0, complete: false };
+  const summaries = new Map<string, FindingSummary>();
+  const record = (finding: Finding): void => {
+    result.findingCount++;
+    if (finding.status === 'confirmed') result.confirmedCount++; else result.riskCount++;
+    if (result.findings.length < MAX_FINDINGS) result.findings.push(finding);
+    const key = `${finding.code}:${finding.status}`;
+    const summary = summaries.get(key) ?? { code: finding.code, status: finding.status, count: 0 };
+    summary.count++;
+    if (!summary.firstLocation && finding.worksheetName && finding.address) {
+      summary.firstLocation = { worksheetName: finding.worksheetName, address: finding.address };
+    }
+    summaries.set(key, summary);
+  };
   try {
     await Excel.run(async context => {
       const worksheets = context.workbook.worksheets;
@@ -41,11 +54,7 @@ export async function scanCompatibilityCells(signal?: AbortSignal,
                 const findings = analyzeFormula({ worksheetName: sheet.name,
                   address: cellAddress(used.rowIndex + row + r, used.columnIndex + column + c),
                   formula: range.formulas[r]![c], value: range.values[r]?.[c], valueType: range.valueTypes[r]![c]! });
-                for (const finding of findings) {
-                  result.findingCount++;
-                  if (finding.status === 'confirmed') result.confirmedCount++; else result.riskCount++;
-                  if (result.findings.length < MAX_FINDINGS) result.findings.push(finding);
-                }
+                for (const finding of findings) record(finding);
               }
               result.scannedCells += width * height;
               onProgress?.(result.scannedCells);
@@ -60,6 +69,7 @@ export async function scanCompatibilityCells(signal?: AbortSignal,
     throwIfCancelled(signal);
     result.reasonCode = 'CELL_READ_FAILED';
   }
+  result.summaries = [...summaries.values()];
   throwIfCancelled(signal);
   return result;
 }

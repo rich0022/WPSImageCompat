@@ -10,6 +10,12 @@ export interface Finding {
   formula?: string;
   evidence: string;
 }
+export interface FindingSummary {
+  code: FindingCode;
+  status: 'confirmed' | 'risk';
+  count: number;
+  firstLocation?: { worksheetName: string; address: string };
+}
 export interface Check {
   category: Category;
   completion: 'complete' | 'partial' | 'unavailable';
@@ -18,6 +24,7 @@ export interface Check {
 }
 export interface CellScan {
   findings: Finding[];
+  summaries: FindingSummary[];
   findingCount: number;
   confirmedCount: number;
   riskCount: number;
@@ -37,9 +44,10 @@ export interface CompatibilityReport {
   schemaVersion: 1;
   createdAt: string;
   checks: Check[];
-  cells: Omit<CellScan, 'findings'>;
+  cells: Omit<CellScan, 'findings' | 'summaries'>;
   metadata?: Omit<Metadata, 'externalReferenceIds'> & { externalReferenceCount: number };
   findings: Finding[];
+  summaries: FindingSummary[];
   findingCount: number;
   omittedFindings: number;
   externalTargetsChecked: false;

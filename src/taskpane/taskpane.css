@@ -34,3 +34,4 @@ li { margin: 8px 0; }
 #compatibility { background: #176442; color: white; cursor: pointer; }
 #compatibility-results { font-size: 12px; overflow-wrap: anywhere; }
 #compatibility-results pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.location-button { padding: 4px 7px; font-size: 12px; color: #176442; border-color: #9bb9a8; cursor: pointer; }

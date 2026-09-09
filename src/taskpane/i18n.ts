@@ -18,6 +18,9 @@ export const en = {
   compatScope: 'Checks current cell formulas and workbook.xml metadata only. External targets are never opened. Defined names, INDIRECT text targets, connections, charts, macros and layout are not checked. Avoid editing during the scan: live cells and the file snapshot are read at different times. A clear result is not a guarantee of full WPS/Excel compatibility.',
   compatOmitted: '{count} findings omitted from details and download due to the 5,000-detail limit. Counts include them.',
   compatFirst100: 'Showing the first 100 findings. Download contains up to 5,000 details.',
+  compatSummaryHint: 'Results are grouped by issue type. Select a location to jump to the first matching cell; the detailed download keeps each finding.',
+  compatTypeCount: '{count} matches', compatGoTo: 'Go to {sheet}!{address}',
+  compatOpeningLocation: 'Opening {sheet}!{address}…', compatLocationOpened: 'Selected {sheet}!{address}.',
   compatLive: 'Current Excel cell', compatSnapshot: 'Workbook file snapshot',
 
   badge: 'Compatibility & images', intro: 'Check compatibility and preview WPS cell images while keeping your formulas.',
@@ -96,6 +99,9 @@ export const zhCN: Record<MessageKey, string> = {
   compatScope: '仅检查当前单元格公式和 workbook.xml 元数据，不访问外部目标。尚未检查定义名称、INDIRECT 文本目标、连接、图表、宏和布局。扫描时请勿编辑：单元格与文件快照在不同时间读取。未发现问题不代表 WPS 与 Excel 完全兼容。',
   compatOmitted: '因 5,000 条详情上限，列表及下载省略了 {count} 条发现，统计仍包含这些记录。',
   compatFirst100: '页面显示前 100 条发现，下载最多包含 5,000 条详情。',
+  compatSummaryHint: '结果已按问题类型汇总。点击位置可跳到第一个匹配单元格；详细下载仍保留每一条发现。',
+  compatTypeCount: '{count} 处', compatGoTo: '定位到 {sheet}!{address}',
+  compatOpeningLocation: '正在打开 {sheet}!{address}…', compatLocationOpened: '已选中 {sheet}!{address}。',
   compatLive: 'Excel 当前单元格', compatSnapshot: '工作簿文件快照',
 
   badge: '兼容检查与图片预览', intro: '检查兼容风险，预览 WPS 单元格图片，并保留原始公式。',

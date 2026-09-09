@@ -2,6 +2,7 @@ import './taskpane.css';
 import { checkCompatibility } from '../core/compatibility/controller';
 import type { CompatibilityReport } from '../core/compatibility/types';
 import { renderCompatibility } from './compatibility-view';
+import { navigateToCompatibilityCell } from '../core/compatibility/navigator';
 import { detectWorkbook } from '../core/workbook-detector';
 import type { DetectionResult } from '../core/workbook-detector';
 import { showWorkbookImages } from '../core/preview-controller';
@@ -78,7 +79,19 @@ function appendIssue(location: string, code: string, original: string): void {
   element('results').append(item);
 }
 function renderResults(): void {
-  renderCompatibility(element('compatibility-results'), lastCompatibility, locale);
+  renderCompatibility(element('compatibility-results'), lastCompatibility, locale, location => {
+    if (busy) return;
+    setStatus('compatOpeningLocation', { sheet: location.worksheetName, address: location.address });
+    void navigateToCompatibilityCell(location).then(() => {
+      setStatus('compatLocationOpened', { sheet: location.worksheetName, address: location.address });
+    }).catch(error => {
+      lastErrorCode = error instanceof WorkbookError ? error.code : 'LOCATION_NOT_FOUND';
+      lastErrorMessage = error instanceof Error ? error.message : undefined;
+      statusText = () => errorText(locale, lastErrorCode!, lastErrorMessage);
+      status.textContent = statusText();
+      renderResults();
+    });
+  });
   element('results').replaceChildren();
   if (lastDetection) {
     const { scan, mappings, parsed } = lastDetection;

@@ -11,7 +11,7 @@ const rules = (formula: string, value: unknown = 1, valueType = 'Double') => ana
   worksheetName: 'Sheet 1', address: 'B3', formula, value, valueType,
 });
 const archive = async (xml: string) => new JSZip().file('xl/workbook.xml', xml).generateAsync({ type: 'uint8array' });
-const cleanScan = (): CellScan => ({ findings: [], findingCount: 0, confirmedCount: 0, riskCount: 0,
+const cleanScan = (): CellScan => ({ findings: [], summaries: [], findingCount: 0, confirmedCount: 0, riskCount: 0,
   scannedCells: 10, scannedWorksheets: 1, totalWorksheets: 1, complete: true });
 
 test('formula evidence distinguishes an observed error from a function compatibility risk', () => {
@@ -145,6 +145,7 @@ test('read-only host scan tiles wide ranges, caps details and preserves actual c
     assert.equal(result.complete, true);
     assert.equal(result.scannedCells, 6001);
     assert.equal(result.findings.length, 5000);
+    assert.equal(result.summaries[0]?.count, 6001);
     assert.equal(result.findingCount, 6001);
     assert.equal(result.confirmedCount, 6001);
     assert.equal(result.findings[0]?.address, 'A3');
@@ -178,4 +179,16 @@ test('detail cap applies to external inventory downloads without an uncapped met
   assert.equal(report.omittedFindings, 1000);
   assert.equal(report.metadata?.externalReferenceCount, 6000);
   assert.equal('externalReferenceIds' in report.metadata!, false);
+});
+
+test('summary counts retain every matching issue even when details are capped', async () => {
+  const scan = { ...cleanScan(), findings: [{ category: 'formulas' as const, code: 'functionMarker' as const,
+    status: 'risk' as const, source: 'liveCells' as const, worksheetName: 'Sheet 1', address: 'A1', evidence: '_xlfn.XLOOKUP' }],
+  summaries: [{ code: 'functionMarker' as const, status: 'risk' as const, count: 6001,
+    firstLocation: { worksheetName: 'Sheet 1', address: 'A1' } }], findingCount: 6001, riskCount: 6001 };
+  const report = await checkCompatibility(undefined, undefined, { scan: async () => scan,
+    read: async () => archive('<workbook/>'), parse: parseCompatibilityMetadata });
+  assert.equal(report.summaries[0]?.count, 6001);
+  assert.equal(report.summaries[0]?.firstLocation?.address, 'A1');
+  assert.equal(report.findings.length, 1);
 });

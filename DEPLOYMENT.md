@@ -31,7 +31,7 @@
 
 ## Manifest 和路由
 
-- 根目录 `manifest.xml`：localhost 开发版，不直接上传为生产文件。
+- 根目录 `manifest.xml`：localhost 开发版，不直接上传为生产文件；不可用于团队线上使用。
 - `scripts/prepare-deployment.mjs`：生成 `dist/manifest.xml`，将全部 localhost URL 替换为固定生产域名，并验证 XML 及资源存在。
 - `/`：安装介绍页；通过 `_redirects` 重写到 `/index.html`。
 - `/manifest.xml`：生产清单下载，application/xml，无缓存。
@@ -67,6 +67,11 @@ npm run deploy
 2. 下载的 manifest 中不能含 localhost，所有资源均指向正式域名。
 3. 任务窗格返回 text/html，不应带阻止 Excel 嵌入的 X-Frame-Options / CSP frame-ancestors 限制。
 4. 在 Excel 中换用生产 manifest，停止本地开发服务器后仍能打开插件。
+5. 生产窗格打开后确认版本信息和更新提示来自同源 `version.json`；升级 XML 清单版本、Ribbon、权限或 URL 后，重新安装清单。
+
+## 团队分发与更新
+
+Cloudflare 托管的是任务窗格资源，不会自动改写员工本机已侧载的 `localhost` 清单。团队成员应安装线上 `/manifest.xml`；此后普通 TypeScript、界面和任务窗格功能更新会通过发布后的同源资源与版本检查生效。对 Microsoft 365 组织，管理员应使用集中部署分发同一生产清单，避免逐台维护。公开便利安装仍需 Microsoft AppSource 审核；没有市场发布时，外部用户需要按 Excel 支持的侧载/组织分发方式安装。
 5. 实际 Show/Refresh/Remove 行为仍按 README 的 Windows/macOS 真实文件矩阵验收。网页可访问不等于 Excel 兼容性通过。
 6. `/version.json` 应返回 JSON 和 `Cache-Control: no-store`；其中 buildId 必须与本次打包的任务窗格脚本一致。HTML 使用 no-cache，带哈希的脚本文件随构建更新。不要单独发布版本文件，必须原子发布整个 dist。
 7. 0.5.0 起，已有窗格在发现不同构建 ID 后提示用户刷新，忙碌时禁用更新。旧版本第一次升级须手动重开窗格。XML 清单权限或 Ribbon 更改仍需单独更新清单。

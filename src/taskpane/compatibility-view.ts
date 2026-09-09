@@ -1,4 +1,4 @@
-import type { CompatibilityReport, FindingCode } from '../core/compatibility/types';
+import type { CompatibilityReport, FindingCode, FindingSummary } from '../core/compatibility/types';
 import { translate, type Locale, type MessageKey } from './i18n';
 
 const titles: Record<FindingCode, MessageKey> = {
@@ -8,7 +8,25 @@ const titles: Record<FindingCode, MessageKey> = {
 const categories = { formulas: 'compatFormulas', externalLinks: 'compatLinks', dates: 'compatDates' } as const;
 const states = { confirmed: 'compatConfirmed', risk: 'compatRisk', clear: 'compatClear', unchecked: 'compatUnchecked' } as const;
 const completion = { complete: 'compatComplete', partial: 'compatPartial', unavailable: 'compatUnavailable' } as const;
-export function renderCompatibility(container: HTMLElement, report: CompatibilityReport | undefined, locale: Locale): void {
+
+/** A concise UI summary; the detailed local download still holds each finding. */
+export function summarizeCompatibilityFindings(report: CompatibilityReport): FindingSummary[] {
+  if (report.summaries.length) return report.summaries;
+  const groups = new Map<string, FindingSummary>();
+  for (const finding of report.findings) {
+    const key = `${finding.code}:${finding.status}`;
+    const group = groups.get(key) ?? { code: finding.code, status: finding.status, count: 0 };
+    group.count++;
+    if (!group.firstLocation && finding.worksheetName && finding.address) {
+      group.firstLocation = { worksheetName: finding.worksheetName, address: finding.address };
+    }
+    groups.set(key, group);
+  }
+  return [...groups.values()];
+}
+
+export function renderCompatibility(container: HTMLElement, report: CompatibilityReport | undefined, locale: Locale,
+  onNavigate?: (location: { worksheetName: string; address: string }) => void): void {
   container.replaceChildren();
   if (!report) return;
   const t = (key: MessageKey) => translate(locale, key);
@@ -25,19 +43,21 @@ export function renderCompatibility(container: HTMLElement, report: Compatibilit
   paragraph(t('compatDateHint'));
   paragraph(t('compatScope'));
   if (report.omittedFindings) paragraph(translate(locale, 'compatOmitted', { count: report.omittedFindings }));
-  if (report.findings.length > 100) paragraph(t('compatFirst100'));
+  if (report.findings.length) paragraph(t('compatSummaryHint'));
   const list = document.createElement('ul');
-  for (const finding of report.findings.slice(0, 100)) {
+  for (const finding of summarizeCompatibilityFindings(report)) {
     const item = document.createElement('li');
-    item.textContent = t(titles[finding.code]) + ' · ' + t(states[finding.status]) + ' · ' +
-      (finding.worksheetName ? finding.worksheetName + '!' + finding.address : t('workbook'));
-    const details = document.createElement('details');
-    const summary = document.createElement('summary'); summary.textContent = t('details');
-    const evidence = document.createElement('p');
-    evidence.textContent = t(finding.source === 'liveCells' ? 'compatLive' : 'compatSnapshot') + ': ' + finding.evidence;
-    details.append(summary, evidence);
-    if (finding.formula) { const code = document.createElement('pre'); code.textContent = finding.formula; details.append(code); }
-    item.append(details); list.append(item);
+    item.append(t(titles[finding.code]) + ' · ' + t(states[finding.status]) + ' · ' +
+      translate(locale, 'compatTypeCount', { count: finding.count }));
+    if (finding.firstLocation && onNavigate) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'location-button';
+      button.textContent = translate(locale, 'compatGoTo', { sheet: finding.firstLocation.worksheetName, address: finding.firstLocation.address });
+      button.addEventListener('click', () => onNavigate(finding.firstLocation!));
+      item.append(' ', button);
+    }
+    list.append(item);
   }
   container.append(list);
 }
