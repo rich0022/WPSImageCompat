@@ -30,3 +30,7 @@ label { display: flex; align-items: center; gap: 6px; margin: 8px 0; font-size: 
 #scan-status { font-size: 12px; }
 ul { padding-left: 18px; font-size: 12px; overflow-wrap: anywhere; }
 li { margin: 8px 0; }
+
+#compatibility { background: #176442; color: white; cursor: pointer; }
+#compatibility-results { font-size: 12px; overflow-wrap: anywhere; }
+#compatibility-results pre { white-space: pre-wrap; overflow-wrap: anywhere; }

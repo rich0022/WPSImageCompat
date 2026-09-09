@@ -14,7 +14,7 @@
   </style>
 </head>
 <body><main>
-  <p>0.5.0 · 预览版</p>
+  <p>0.6.0 · 预览版</p>
   <h1>WPS Image Compat for Excel</h1>
   <p>在 Windows 和 macOS 桌面版 Excel 中扫描 WPS DISPIMG 公式，显示可移除的 PNG/JPEG 图片预览，并保留原始公式。</p>
   <p><a class="download" href="/manifest.xml" download="WPSImageCompat.xml">下载 Excel 加载项清单</a></p>
@@ -29,6 +29,7 @@
     <p><a href="https://learn.microsoft.com/en-us/office/dev/add-ins/testing/create-a-network-shared-folder-catalog-for-task-pane-and-content-add-ins">微软 Windows 侧载步骤</a></p>
   </section>
   <section><h2>使用说明</h2>
+    <p>新版“检查兼容性”只读检查公式错误、兼容标记、外部引用和日期系统。详细报告包含公式等业务内容，仅在本地下载，不会上传。未完成的检查会明确标注；这不是一键修复所有 WPS/Excel 差异。</p>
     <p>任务窗格支持简体中文和英文，自动跟随 Excel，也可手动切换。发布新版后会提示更新；正在处理图片时不会强制刷新。首次从旧版升级，请关闭并重新打开任务窗格。</p>
     <p>图片操作需要 ExcelApi 1.10。Show 显示预览，Refresh 重新适配单元格，Remove Preview Images 仅清理插件标记图片。预览是会随工作簿保存的浮动图片，Convert 尚未实现。</p>
     <p>请先用文件副本测试。真实 WPS 文件兼容性及 Windows/macOS 显示效果仍需验收；如果 Excel 已丢弃 WPS 图片资源，插件无法恢复不存在的资源。</p>

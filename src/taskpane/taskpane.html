@@ -20,6 +20,14 @@
       <p class="hint" data-i18n="updateHint">Reloads this pane and clears its scan results. Existing worksheet previews stay in place.</p>
     </section>
     <p id="host-status" role="status">Connecting to Excel…</p>
+    <section class="summary" aria-labelledby="compatibility-title">
+      <h2 id="compatibility-title" data-i18n="compatTitle">Compatibility check</h2>
+      <p class="hint" data-i18n="compatIntro"></p>
+      <div class="actions"><button id="compatibility" data-i18n="compatCheck" disabled>Check Compatibility</button>
+        <button id="compatibility-download" data-i18n="compatDownload" aria-describedby="compatibility-privacy" disabled>Download Detailed Report</button></div>
+      <p id="compatibility-privacy" class="hint" data-i18n="compatPrivacy"></p>
+      <div id="compatibility-results"></div>
+    </section>
     <section class="summary" aria-label="Scan results" data-i18n-label="summary">
       <h2><span data-i18n="detected">Detected:</span> <strong id="image-count">—</strong> <span data-i18n="images">WPS images</span></h2>
       <dl><div><dt data-i18n="sheets">Worksheets with images</dt><dd id="sheet-count">—</dd></div>

@@ -1,4 +1,7 @@
 import './taskpane.css';
+import { checkCompatibility } from '../core/compatibility/controller';
+import type { CompatibilityReport } from '../core/compatibility/types';
+import { renderCompatibility } from './compatibility-view';
 import { detectWorkbook } from '../core/workbook-detector';
 import type { DetectionResult } from '../core/workbook-detector';
 import { showWorkbookImages } from '../core/preview-controller';
@@ -32,6 +35,7 @@ let busy = false;
 let cancelAllowed = false;
 let controller: AbortController | undefined;
 let host: HostCapabilities | undefined;
+let lastCompatibility: CompatibilityReport | undefined;
 let lastDetection: DetectionResult | undefined;
 let lastPreview: PreviewResult | undefined;
 let lastErrorCode: string | undefined;
@@ -45,6 +49,8 @@ function setStatus(key: MessageKey, params?: MessageParams): void {
   status.textContent = statusText();
 }
 function updateControls(): void {
+  element<HTMLButtonElement>('compatibility').disabled = !ready || busy;
+  element<HTMLButtonElement>('compatibility-download').disabled = !lastCompatibility || busy;
   element<HTMLButtonElement>('scan').disabled = !ready || busy;
   for (const id of ['show', 'refresh', 'remove']) element<HTMLButtonElement>(id).disabled = !shapesReady || busy;
   element<HTMLFieldSetElement>('preview-settings').disabled = !shapesReady || busy;
@@ -72,6 +78,7 @@ function appendIssue(location: string, code: string, original: string): void {
   element('results').append(item);
 }
 function renderResults(): void {
+  renderCompatibility(element('compatibility-results'), lastCompatibility, locale);
   element('results').replaceChildren();
   if (lastDetection) {
     const { scan, mappings, parsed } = lastDetection;
@@ -108,6 +115,7 @@ function applyLanguage(): void {
   updateControls();
 }
 function clearResults(): void {
+  lastCompatibility = undefined;
   lastDetection = undefined;
   lastPreview = undefined;
   lastErrorCode = undefined;
@@ -180,6 +188,25 @@ if (typeof Office === 'undefined') {
     applyLanguage();
   });
 }
+element('compatibility').addEventListener('click', () => void runAction('compatibility', async signal => {
+  setStatus('compatScanning', { count: 0 });
+  lastCompatibility = await checkCompatibility(signal, count => setStatus('compatScanning', { count }));
+  renderResults();
+  setStatus('compatDone');
+}));
+element('compatibility-download').addEventListener('click', () => {
+  if (!lastCompatibility || busy) return;
+  const report = { ...lastCompatibility, appVersion: __APP_VERSION__, buildId: __BUILD_ID__, host,
+    scope: { cells: 'Current formulas and host-typed formula errors; excludes constants, defined names and INDIRECT text targets.',
+      metadata: 'xl/workbook.xml date system and externalReference IDs only; no external target validation.',
+      excluded: ['connections', 'charts', 'macros', 'layout', 'date value interpretation'],
+      timing: 'Live cells and workbook snapshot read sequentially; not an atomic snapshot.' } };
+  const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' }));
+  const link = document.createElement('a');
+  link.href = url; link.download = 'wps-excel-compatibility-report.json';
+  document.body.append(link); link.click(); link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+});
 element('scan').addEventListener('click', () => void runAction('scan', async signal => {
   setStatus('scanning');
   const detection = await detectWorkbook(({ worksheetName, scannedCells }) => {
