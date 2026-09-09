@@ -37,7 +37,7 @@
     <div class="actions">
       <button id="scan" data-i18n="scan" disabled>Scan Workbook</button>
       <button id="show" data-i18n="show" disabled>Show Images</button><button id="refresh" data-i18n="refresh" disabled>Refresh Images</button>
-      <button id="remove" data-i18n="remove" disabled>Remove Preview Images</button><button id="convert" data-i18n="convert" aria-describedby="conversion-note" disabled>Convert Workbook</button>
+      <button id="remove" data-i18n="remove" disabled>Remove Preview Images</button>
       <button id="cancel" data-i18n="cancel" disabled>Cancel Scan / Read</button>
       <button id="diagnostics" data-i18n="diagnostics" disabled>Download Diagnostics</button>
     </div>
@@ -45,6 +45,13 @@
       <label><input id="keep-aspect-ratio" type="checkbox" checked /> <span data-i18n="aspect">Keep aspect ratio</span></label>
       <label><input id="fit-inside-cell" type="checkbox" checked /> <span data-i18n="fit">Fit image inside cell</span></label>
       <label><input id="preserve-formula" type="checkbox" checked disabled /> <span data-i18n="preserve">Preserve original DISPIMG formula (always)</span></label>
+    </fieldset>
+    <fieldset id="conversion-settings" disabled><legend data-i18n="conversionSettings">Conversion settings</legend>
+      <label><input id="convert-dispimg" type="checkbox" checked /> <span data-i18n="convertDispimg">Convert DISPIMG to permanent Excel images</span></label>
+      <label><input id="freeze-unsupported" type="checkbox" /> <span data-i18n="freezeUnsupported">Replace supported current results of unsupported formulas with values</span></label>
+      <label><input id="freeze-external" type="checkbox" /> <span data-i18n="freezeExternal">Replace supported current results of external-reference formulas with values</span></label>
+      <label><input id="conversion-confirm" type="checkbox" /> <span data-i18n="conversionConfirm">I understand this changes the current workbook. I have saved a copy.</span></label>
+      <button id="convert" data-i18n="convert" aria-describedby="conversion-note" disabled>Convert Workbook</button>
     </fieldset>
     <p class="hint" data-i18n="hint"></p>
     <p id="conversion-note" class="hint" data-i18n="conversion"></p>

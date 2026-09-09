@@ -3,6 +3,8 @@ import { checkCompatibility } from '../core/compatibility/controller';
 import type { CompatibilityReport } from '../core/compatibility/types';
 import { renderCompatibility } from './compatibility-view';
 import { navigateToCompatibilityCell } from '../core/compatibility/navigator';
+import { convertWorkbook } from '../core/workbook-converter';
+import type { WorkbookConversionResult } from '../core/workbook-converter';
 import { detectWorkbook } from '../core/workbook-detector';
 import type { DetectionResult } from '../core/workbook-detector';
 import { showWorkbookImages } from '../core/preview-controller';
@@ -37,6 +39,7 @@ let cancelAllowed = false;
 let controller: AbortController | undefined;
 let host: HostCapabilities | undefined;
 let lastCompatibility: CompatibilityReport | undefined;
+let lastConversion: WorkbookConversionResult | undefined;
 let lastDetection: DetectionResult | undefined;
 let lastPreview: PreviewResult | undefined;
 let lastErrorCode: string | undefined;
@@ -55,6 +58,11 @@ function updateControls(): void {
   element<HTMLButtonElement>('scan').disabled = !ready || busy;
   for (const id of ['show', 'refresh', 'remove']) element<HTMLButtonElement>(id).disabled = !shapesReady || busy;
   element<HTMLFieldSetElement>('preview-settings').disabled = !shapesReady || busy;
+  element<HTMLFieldSetElement>('conversion-settings').disabled = !ready || busy;
+  const selectedConversion = element<HTMLInputElement>('convert-dispimg').checked ||
+    element<HTMLInputElement>('freeze-unsupported').checked || element<HTMLInputElement>('freeze-external').checked;
+  element<HTMLButtonElement>('convert').disabled = !ready || busy || !selectedConversion ||
+    !element<HTMLInputElement>('conversion-confirm').checked;
   element<HTMLButtonElement>('cancel').disabled = !busy || !cancelAllowed || !!controller?.signal.aborted;
   element<HTMLButtonElement>('diagnostics').disabled = !host || busy;
   element<HTMLButtonElement>('apply-update').disabled = !canApplyUpdate(busy, availableUpdate);
@@ -109,6 +117,14 @@ function renderResults(): void {
   for (const issue of (lastPreview?.issues ?? []).slice(0, 20)) {
     appendIssue(issue.location, issue.code ?? 'OPERATION_FAILED', issue.message);
   }
+  if (lastConversion) {
+    const item = document.createElement('li');
+    item.textContent = t('conversionComplete', { images: lastConversion.convertedImages,
+      formulas: lastConversion.clearedDispimgFormulas + lastConversion.frozenFormulas,
+      skipped: lastConversion.skipped, broken: lastConversion.unresolvedBrokenReferences });
+    element('results').append(item);
+    for (const issue of lastConversion.issues.slice(0, 20)) appendIssue(issue.location, issue.code, issue.message);
+  }
   if (lastErrorCode) appendIssue(t('workbook'), lastErrorCode, lastErrorMessage ?? '');
 }
 function applyLanguage(): void {
@@ -129,6 +145,7 @@ function applyLanguage(): void {
 }
 function clearResults(): void {
   lastCompatibility = undefined;
+  lastConversion = undefined;
   lastDetection = undefined;
   lastPreview = undefined;
   lastErrorCode = undefined;
@@ -151,6 +168,14 @@ function displayPreview(result: PreviewResult): void {
   lastPreview = result;
   statusText = () => t('previewComplete', { inserted: result.inserted, existing: result.existing, removed: result.removed, skipped: result.skipped }) +
     (result.issues.length ? ' ' + t('issueCount', { count: result.issues.length }) : '') + ' ' + t('preserved');
+  status.textContent = statusText();
+  renderResults();
+}
+function displayConversion(result: WorkbookConversionResult): void {
+  lastConversion = result;
+  statusText = () => t('conversionComplete', { images: result.convertedImages,
+    formulas: result.clearedDispimgFormulas + result.frozenFormulas, skipped: result.skipped,
+    broken: result.unresolvedBrokenReferences });
   status.textContent = statusText();
   renderResults();
 }
@@ -220,6 +245,23 @@ element('compatibility-download').addEventListener('click', () => {
   document.body.append(link); link.click(); link.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 60000);
 });
+for (const id of ['convert-dispimg', 'freeze-unsupported', 'freeze-external', 'conversion-confirm']) {
+  element<HTMLInputElement>(id).addEventListener('change', updateControls);
+}
+element('convert').addEventListener('click', () => void runAction('convert', async () => {
+  const result = await convertWorkbook({
+    convertDispimg: element<HTMLInputElement>('convert-dispimg').checked,
+    freezeUnsupported: element<HTMLInputElement>('freeze-unsupported').checked,
+    freezeExternal: element<HTMLInputElement>('freeze-external').checked,
+    keepAspectRatio: element<HTMLInputElement>('keep-aspect-ratio').checked,
+    fitInsideCell: element<HTMLInputElement>('fit-inside-cell').checked,
+  }, stage => {
+    const message = { reading: 'conversionReading', checking: 'conversionChecking',
+      convertingImages: 'conversionImages', convertingFormulas: 'conversionFormulas' } as const;
+    setStatus(message[stage]);
+  });
+  displayConversion(result);
+}, false));
 element('scan').addEventListener('click', () => void runAction('scan', async signal => {
   setStatus('scanning');
   const detection = await detectWorkbook(({ worksheetName, scannedCells }) => {

@@ -1,6 +1,8 @@
 import type { CellBox } from './image-layout';
 export const PREVIEW_PREFIX = 'WPSIMG_';
 export const PREVIEW_MARKER = 'WPS Image Compat preview v1';
+export const CONVERTED_PREFIX = 'WPSCONVERT_';
+export const CONVERTED_MARKER = 'WPS Image Compat converted v1';
 export interface PreviewShapeInfo extends CellBox {
   id: string; name: string; altTextTitle: string; altTextDescription: string;
 }
@@ -36,4 +38,17 @@ export async function previewName(imageId: string, address: string, runId: strin
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(imageId));
   const hash = Array.from(new Uint8Array(digest)).slice(0, 12).map(byte => byte.toString(16).padStart(2, '0')).join('');
   return `${PREVIEW_PREFIX}${hash}_${address}_${runId}`;
+}
+export async function convertedName(imageId: string, address: string, runId: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(imageId));
+  const hash = Array.from(new Uint8Array(digest)).slice(0, 12).map(byte => byte.toString(16).padStart(2, '0')).join('');
+  return `${CONVERTED_PREFIX}${hash}_${address}_${runId}`;
+}
+export function matchesConverted(shape: PreviewShapeInfo, imageId: string, address: string): boolean {
+  if (!shape.name.startsWith(CONVERTED_PREFIX) || shape.altTextTitle !== CONVERTED_MARKER) return false;
+  try {
+    const data: unknown = JSON.parse(shape.altTextDescription);
+    return !!data && typeof data === 'object' && 'imageId' in data && 'address' in data &&
+      data.imageId === imageId && data.address === address;
+  } catch { return false; }
 }

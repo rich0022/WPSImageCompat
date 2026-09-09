@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderImages, removePreviewImages } from '../src/core/image-renderer';
 import { DEFAULT_PREVIEW_SETTINGS } from '../src/core/image-layout';
-import { PREVIEW_MARKER } from '../src/core/preview-identity';
+import { CONVERTED_MARKER, PREVIEW_MARKER } from '../src/core/preview-identity';
 import type { ImageMapping } from '../src/types/wps';
 
 function mapping(sheet = 'Sheet1', address = 'A1', imageId = 'ID_A'): ImageMapping {
@@ -100,6 +100,23 @@ test('inserts positioned image with TwoCell placement, aspect lock and untouched
     assert.deepEqual(sheet.cells.get('A1')!.formulas, [['=DISPIMG("ID_A",1)']]);
     assert.equal((await renderImages([mapping()], DEFAULT_PREVIEW_SETTINGS)).existing, 1);
     assert.equal(sheet.shapes.length, 1);
+  });
+});
+test('conversion creates a permanent shape, replaces only its preview, and can resume without a duplicate', async () => {
+  const sheet = makeSheet();
+  await withExcel([sheet], async () => {
+    assert.equal((await renderImages([mapping()], DEFAULT_PREVIEW_SETTINGS)).inserted, 1);
+    const converted = await renderImages([mapping()], DEFAULT_PREVIEW_SETTINGS, 'convert');
+    assert.equal(converted.inserted, 1);
+    assert.equal(converted.removed, 1);
+    assert.deepEqual(converted.renderedCells?.map(cell => cell.address), ['A1']);
+    assert.equal(sheet.shapes.length, 1);
+    assert.equal(sheet.shapes[0]!.altTextTitle, CONVERTED_MARKER);
+    assert.ok(sheet.shapes[0]!.name.startsWith('WPSCONVERT_'));
+    const repeated = await renderImages([mapping()], DEFAULT_PREVIEW_SETTINGS, 'convert');
+    assert.equal(repeated.existing, 1);
+    assert.equal(sheet.shapes.length, 1);
+    assert.equal((await removePreviewImages()).removed, 0);
   });
 });
 test('repeated IDs across cells/sheets remain separate and deduplicate after row movement', async () => {

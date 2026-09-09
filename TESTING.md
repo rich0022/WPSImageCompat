@@ -10,7 +10,7 @@ npm run certs
 npm run dev
 ```
 
-开发服务为 HTTPS localhost:3000。macOS 把根目录 `manifest.xml` 复制到 `~/Library/Containers/com.microsoft.Excel/Data/Documents/wef/wps-image-compat.xml`，保存工作并完全退出、重开 Excel。从“开始 → 加载项”菜单选择插件（本项目用户已确认此入口可见）。部分旧界面有“插入 → 我的加载项”旁的小箭头，请以实机为准。不要用账户/商店的空列表判断侧载失败，“开发工具 → Excel 加载项”也不是本项目的入口。Windows 按 README 配置受信任共享文件夹。开发清单和生产清单使用同一 ID，测试时只保留所需版本。窗格应显示版本 `0.5.0` 和语言选择；若仍是旧版，关闭并重新打开窗格。
+开发服务为 HTTPS localhost:3000。macOS 把根目录 `manifest.xml` 复制到 `~/Library/Containers/com.microsoft.Excel/Data/Documents/wef/wps-image-compat.xml`，保存工作并完全退出、重开 Excel。从“开始 → 加载项”菜单选择插件（本项目用户已确认此入口可见）。部分旧界面有“插入 → 我的加载项”旁的小箭头，请以实机为准。不要用账户/商店的空列表判断侧载失败，“开发工具 → Excel 加载项”也不是本项目的入口。Windows 按 README 配置受信任共享文件夹。开发清单和生产清单使用同一 ID，测试时只保留所需版本。窗格应显示版本 `0.8.0` 和语言选择；若仍是旧版，关闭并重新打开窗格。
 
 参考：[微软 macOS 侧载步骤](https://learn.microsoft.com/en-us/office/dev/add-ins/testing/sideload-an-office-add-in-on-mac)、[Windows 共享目录侧载](https://learn.microsoft.com/en-us/office/dev/add-ins/testing/create-a-network-shared-folder-catalog-for-task-pane-and-content-add-ins)。
 
@@ -43,7 +43,10 @@ npm run diagnose:file -- "/absolute/path/sample.xlsx" "/absolute/path/new-report
 | Scan 或 Show 读取时 Cancel | 等待当前批次/解析及句柄清理后显示取消；不开始图片写入；可再次操作 |
 | 图片写入或 Remove 期间 | 取消按钮禁用，等待操作结束 |
 | Download Diagnostics | 得到 JSON，检查 host 能力、计数、错误码；没有公式/图片/单元格等内容 |
-| Convert Workbook | 禁用并说明尚未实现；不更改任何内容 |
+| Convert Workbook：仅勾选 DISPIMG 并确认 | 每个已找到且能插入的资源成为永久 Shape；成功后才清除该单元格原公式；同位置预览被替换；失败资源和公式保留 |
+| Convert Workbook：冻结不受支持公式或外部链接 | 仅把仍与扫描时相同、且当前结果不是错误的已选公式替换为当前值；没有选中的公式不变 |
+| Convert Workbook：含 `#REF!` | 报告数量，不猜测或改写失效引用 |
+| Convert Workbook：报告详情已截断 | 拒绝部分冻结并给出提示；不得只转换前 5,000 条 |
 | 语言切换 | 自动跟随 Excel；手动中英切换立即生效，扫描计数/位置和预览设置不变；重开后保留选择 |
 | 发布更新提示 | 发布不同构建 ID 后打开/聚焦窗格，出现更新按钮；无更新时不显示 |
 | 图片操作期间遇到更新 | 提示可见但更新按钮禁用，完成后方可点击；不能打断 Shape 写入 |
@@ -66,7 +69,7 @@ npm run diagnose:file -- "/absolute/path/sample.xlsx" "/absolute/path/new-report
 
 | 层级 | 本轮状态 | 能证明什么 |
 | --- | --- | --- |
-| TypeScript / 构建 / 自动测试 | 见 PHASE4.md | 类型、打包、纯逻辑和模拟 Office 流程 |
+| TypeScript / 构建 / 自动测试 | 本地发布记录 | 类型、打包、纯逻辑和模拟 Office 流程 |
 | 用户授权真实样本的磁盘读取 | 已完成，报告仅留本地 | 原始 OOXML、ID 映射和原文件散列完整性 |
 | 真实样本图片解码与布局公式 | 已完成，报告仅留本地 | 图片像素可解码及几何计算，不含 Excel 显示 |
 | macOS 原生 Excel UI / getFileAsync / Shape | 待实机验收 | 不能用本地文件读取替代 |
@@ -94,4 +97,4 @@ npm run diagnose:file -- "/absolute/path/sample.xlsx" "/absolute/path/new-report
 | 扫描中发布新版 | 更新按钮禁用；完成或取消后才允许重载 |
 | 执行其他操作或重载窗格 | 旧兼容报告清空，不能下载失效结果 |
 
-本轮自动化与磁盘结果见 RELEASE_0_6.md。上述原生宿主场景目前仍标记为“待测”，不能由浏览器页面或模拟对象测试推导通过。
+上述原生宿主场景目前仍标记为“待测”，不能由浏览器页面或模拟对象测试推导通过。

@@ -16,6 +16,15 @@ for (const path of [
 ]) {
   await access(new URL(`dist/${path}`, root));
 }
+for (const path of ['PHASE1.md', 'PHASE2.md', 'PHASE3.md', 'PHASE4.md', 'RELEASE_0_6.md', 'RELEASE_0_7.md', 'RELEASE_0_8.md']) {
+  try {
+    await access(new URL(`dist/${path}`, root));
+    throw new Error(`Internal project record must not be deployed: ${path}`);
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') continue;
+    throw error;
+  }
+}
 const target = new URL('dist/manifest.xml', root);
 await writeFile(target, manifest);
 console.log(`Production manifest prepared: ${fileURLToPath(target)}`);

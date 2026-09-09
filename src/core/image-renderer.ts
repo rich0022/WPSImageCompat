@@ -1,13 +1,13 @@
 import type { ImageMapping } from '../types/wps';
 import type { CellBox, PreviewSettings } from './image-layout';
 import { imageLayout } from './image-layout';
-import { isPreviewShape, matchesPreview, PREVIEW_MARKER, previewName } from './preview-identity';
+import { CONVERTED_MARKER, convertedName, isPreviewShape, matchesConverted, matchesPreview, PREVIEW_MARKER, previewName } from './preview-identity';
 import { parseDispimgFormula } from './dispimg-formula';
 import { WorkbookError } from '../utils/errors';
 
 export interface PreviewIssue { location: string; message: string; code?: string }
-export interface PreviewResult { inserted: number; existing: number; removed: number; skipped: number; issues: PreviewIssue[] }
-export type PreviewMode = 'show' | 'refresh';
+export interface PreviewResult { inserted: number; existing: number; removed: number; skipped: number; issues: PreviewIssue[]; renderedCells?: ImageMapping['cell'][] }
+export type PreviewMode = 'show' | 'refresh' | 'convert';
 export function canRenderImages(): boolean {
   return typeof Office !== 'undefined' && Office.context.requirements.isSetSupported('ExcelApi', '1.10');
 }
@@ -17,7 +17,7 @@ function requireShapes(): void {
 function message(error: unknown): string {
   return error instanceof WorkbookError ? error.message : 'Excel could not complete the shape operation. Check worksheet protection and retry.';
 }
-interface Target { mapping: ImageMapping; sheet: Excel.Worksheet; cell: Excel.Range; box: CellBox; name: string }
+interface Target { mapping: ImageMapping; sheet: Excel.Worksheet; cell: Excel.Range; box: CellBox; name: string; previewToReplace?: Excel.Shape }
 interface Created { shape: Excel.Shape; target: Target }
 
 /** Excel Shape operations only. Formulas are rechecked but never written. */
@@ -75,9 +75,20 @@ export async function renderImages(
           result.issues.push({ location, code: 'HIDDEN_CELL', message: 'Hidden or zero-size cell was skipped. Unhide it and refresh to display its image.' });
           continue;
         }
-        const existing = sheet.shapes.items.find(shape => !claimed.has(`${sheet.name}:${shape.id}`) && matchesPreview(shape, mapping.cell.imageId, box));
+        const existing = mode === 'convert'
+          ? sheet.shapes.items.find(shape => !claimed.has(`${sheet.name}:${shape.id}`) && matchesConverted(shape, mapping.cell.imageId, mapping.cell.address))
+          : sheet.shapes.items.find(shape => !claimed.has(`${sheet.name}:${shape.id}`) && matchesPreview(shape, mapping.cell.imageId, box));
         if (mode === 'show' && existing) { claimed.add(`${sheet.name}:${existing.id}`); result.existing++; continue; }
-        targets.push({ mapping, sheet, cell, box, name: await previewName(mapping.cell.imageId, mapping.cell.address, runId) });
+        if (mode === 'convert' && existing) {
+          claimed.add(`${sheet.name}:${existing.id}`); result.existing++;
+          (result.renderedCells ??= []).push(mapping.cell);
+          continue;
+        }
+        const previewToReplace = mode === 'convert'
+          ? sheet.shapes.items.find(shape => !claimed.has(`${sheet.name}:${shape.id}`) && matchesPreview(shape, mapping.cell.imageId, box)) : undefined;
+        targets.push({ mapping, sheet, cell, box,
+          name: mode === 'convert' ? await convertedName(mapping.cell.imageId, mapping.cell.address, runId) : await previewName(mapping.cell.imageId, mapping.cell.address, runId),
+          previewToReplace });
       } catch (error) {
         if (mode === 'refresh') throw new WorkbookError('REFRESH_PREFLIGHT', `Refresh stopped at ${location}: ${message(error)} Existing previews were kept.`);
         result.skipped++;
@@ -108,8 +119,8 @@ export async function renderImages(
         added = { shape, target };
         created.push(added);
         shape.name = target.name;
-        shape.altTextTitle = PREVIEW_MARKER;
-        shape.altTextDescription = JSON.stringify({ imageId: target.mapping.cell.imageId });
+        shape.altTextTitle = mode === 'convert' ? CONVERTED_MARKER : PREVIEW_MARKER;
+        shape.altTextDescription = JSON.stringify({ imageId: target.mapping.cell.imageId, address: target.mapping.cell.address });
         shape.visible = false;
         shape.load('width,height');
         await context.sync();
@@ -120,13 +131,17 @@ export async function renderImages(
         shape.height = layout.height;
         shape.left = layout.left;
         shape.top = layout.top;
-        shape.altTextDescription = JSON.stringify({ imageId: target.mapping.cell.imageId,
+        shape.altTextDescription = JSON.stringify({ imageId: target.mapping.cell.imageId, address: target.mapping.cell.address,
           fitInsideCell: settings.fitInsideCell, offsetLeft: layout.left - target.box.left, offsetTop: layout.top - target.box.top });
         shape.placement = Excel.Placement.twoCell;
         shape.lockAspectRatio = settings.keepAspectRatio;
         shape.visible = true;
         await context.sync();
         result.inserted++;
+        if (mode === 'convert') {
+          (result.renderedCells ??= []).push(target.mapping.cell);
+          if (target.previewToReplace) { target.previewToReplace.delete(); await context.sync(); result.removed++; }
+        }
       } catch (error) {
         if (mode === 'refresh') {
           const cleaned = await cleanup(created);

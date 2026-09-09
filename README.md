@@ -4,7 +4,7 @@
 
 仓库：[rich0022/WPSImageCompat](https://github.com/rich0022/WPSImageCompat)
 
-当前版本 **0.7.0**：兼容检查按问题类型汇总，并可定位到首个匹配单元格；保留只读检查、本地详细报告、简体中文/英文界面与发布更新提示。支持扫描、显示、刷新、移除预览、扫描/读取取消和诊断导出；不删除或替换原公式。Convert 已预留独立接口，实际转换尚未实现。Windows/macOS 原生 Excel 验收仍待完成，不能把单元测试视为双平台认证。
+当前版本 **0.8.0**：兼容检查按问题类型汇总并可定位到首个匹配单元格；Convert 可将已找到的 DISPIMG 图片变为永久 Excel Shape，并按用户选择将可用的外部/不支持公式结果冻结为值。`#REF!` 不会被猜测性修复。Windows/macOS 原生 Excel 验收仍待完成，不能把单元测试视为双平台认证。
 
 ## 现在怎样使用
 
@@ -90,7 +90,7 @@ macOS 上将下载文件替换为 `~/Library/Containers/com.microsoft.Excel/Data
 
 没有 DISPIMG 时跳过整个文件读取。普通 Excel 文件没有 `xl/cellimages.xml` 时正常返回。若宿主不支持完整文件读取，或 ZIP/XML 损坏，资源统计保持 `—`，不会将“未检查”伪装成“缺失”。
 
-## Phase 3 图片预览
+## 图片预览与转换
 
 - **Scan Workbook**：只读扫描及图片资源检查。
 - **Show Images**：重新扫描当前工作簿，显示找到的 PNG/JPEG 图片，已有预览跳过；问题单元格单独报告。
@@ -98,7 +98,9 @@ macOS 上将下载文件替换为 `~/Library/Containers/com.microsoft.Excel/Data
 - **Remove Preview Images**：不依赖 WPS 源资源，遍历全部工作表并仅删除插件标记图片。重复执行不会影响普通用户图片。
 - **Cancel Scan / Read**：在扫描或文件读取阶段请求取消，完成当前读取及句柄清理后结束。图片写入和清理期间禁用。
 - **Download Diagnostics**：下载当前 Excel 能力、最后操作的计数和错误码，不含工作簿名称、工作表名、地址、公式、图片 ID 或图片内容，不上传数据。某些宿主可能限制下载，请按 [测试说明](TESTING.md) 记录结果。
-- **Convert Workbook**：仍禁用。Phase 4 按首版范围预留 `WorkbookConverter` 接口；调用会明确返回 `CONVERSION_NOT_IMPLEMENTED`。后续转换约定输出新工作簿。
+- **Convert Workbook**：必须先勾选确认，再修改当前工作簿。已找到的 DISPIMG 资源会变成永久 Excel Shape，成功后才清除原 DISPIMG 公式；同位置的插件预览会替换为永久图片。失败、缺失或不支持的图片保留原公式。
+- **冻结可用结果**：可选择将不支持函数或外部引用公式的当前非错误结果替换为常量值，以停止对函数或外部工作簿的依赖。它不尝试翻译函数逻辑，当前为错误的公式会保留。
+- **失效引用**：`#REF!` 保留并计数，不能凭空推断曾经指向的单元格或工作簿。请根据业务来源手动修复。
 
 三项设置默认开启。Keep aspect ratio / Fit image inside cell 可修改；设置变化通过 Refresh 应用到旧预览。Preserve original DISPIMG formula 在预览模式始终开启且不可取消。
 
@@ -110,9 +112,9 @@ Shape 使用 Excel 原生 `placement = TwoCell`，跟随单元格移动和缩放
 
 删除需要名称以 `WPSIMG_` 开头 **并且**替代文字标题为 `WPS Image Compat preview v1`。普通图片仅名字相似不会被删除。手动改掉标记或分组后的预览不保证被识别，请保留这些标记；清理只遍历顶层 Shape，不递归解组用户对象。
 
-**这些是工作簿中的真实浮动 Shape。保存文件会保存预览；它们不是 Excel 原生单元格图片，不会自动消失。** 原公式一直保留，Remove 后原有公式错误显示可能重新出现。图片解析在本机完成，无上传。Excel 的 WPS 资源保留问题仍适用。
+**这些是工作簿中的真实浮动 Shape。保存文件会保存预览；它们不是 Excel 原生单元格图片，不会自动消失。** 预览模式保留原公式；只有用户确认转换后才会清除成功转换的 DISPIMG 公式。图片解析在本机完成，无上传。Excel 的 WPS 资源保留问题仍适用。
 
-## Phase 2 工作流程
+## 图片读取流程
 
 ```text
 Excel 全部工作表 → DISPIMG 单元格和 ID
@@ -129,7 +131,7 @@ ID 与单元格匹配 → found / missing / error
 - 同一 media 路径在一次解析中只转 Base64 一次，不持久保存工作簿或图片，不发送到服务器。
 - 外部 relationship 不下载；目标必须解析到 `xl/media/`。不允许 DTD / 自定义实体声明，歧义 ID / relationship 不随机挑选。
 - 限制：压缩文件 100 MiB、ZIP 条目 20,000、每 XML 4 MiB、每图片 20 MiB、累计解压读取 128 MiB。超过限制明确报错；资源流达到限制即暂停。
-- Base64 读取成功不代表图片编码一定可由 Excel Shape 解码；Phase 3 仅传入官方支持的 PNG/JPEG，其他格式报告跳过，损坏编码由宿主报错。
+- Base64 读取成功不代表图片编码一定可由 Excel Shape 解码；仅传入官方支持的 PNG/JPEG，其他格式报告跳过，损坏编码由宿主报错。
 
 [微软 getFileAsync 文档](https://learn.microsoft.com/en-us/javascript/api/office/office.document?view=common-js)列出桌面 Excel Windows/macOS 的 Compressed 支持，但具体版本和 WPS 自定义部件能否在 Excel 导出的快照中保留，仍需实机验证。如果 Excel 已丢弃图片部件，本阶段不会从不存在的资源恢复图片，也不自动读取磁盘原文件。
 
@@ -149,7 +151,7 @@ src/
     image-layout.ts           纯几何布局计算
     preview-identity.ts       唯一名称和所有权/位置判断
     preview-controller.ts     Show/Refresh 前重新扫描
-    workbook-converter.ts     独立转换接口与未实现状态
+    workbook-converter.ts     显式转换协调、公式冻结和写入保护
     diagnostics.ts            不含工作簿内容的诊断报告
   types/wps.ts               公共数据类型
   utils/                     XML、Base64、错误、取消、超时和文件大小限制
@@ -187,19 +189,21 @@ Windows 和 macOS 各使用真实 WPS 工作簿副本执行：
 6. 连续扫描至少三次，无文件句柄占用失败；所有原公式、单元格和用户图片保持不变。
 7. 对比 WPS 原文件和 Excel 导出快照，确认是否保留 cellimages 及 media；记录 Excel 版本与平台。
 
-Phase 3 还需在 Windows/macOS 各执行以下真实工作簿验收：
+图片与转换功能仍需在 Windows/macOS 各执行以下真实工作簿验收：
 
 - 放置横图、竖图、重复 ID、不连续位置和用户自有图片；Show 后检查居中、不越界和原始比例。
 - 重复 Show 不新增重复图；两个单元格引用相同 ID 时各显示一张。
 - 插入/删除行、改变行高/列宽、合并单元格后检查原生附着行为，并执行 Refresh 验证重新适配。
 - 修改两项设置后 Refresh，核对比例和填充差异；取消适配时检查大图重复执行不累加。
 - 保护工作表、损坏图片或移除资源后尝试 Refresh，核对旧预览保留和失败提示。
-- Remove 后仅插件图片消失，原公式、用户图片及其他数据保持不变。
+- Remove 后仅插件预览图片消失；永久转换图片、用户图片及其他数据保持不变。
+- 在工作簿副本执行 Convert：确认永久图片存在且 DISPIMG 公式只在成功后清除；重复转换不新增永久图片。
+- 分别勾选外部引用与不支持函数冻结，确认仅当前非错误值变成常量；`#REF!` 和错误结果不被清空或替换。
 - 保存、关闭、重新打开，核对预览和所有权标记保留，仍能再次 Show 去重及 Remove。
 
 本轮自动测试使用 Excel 模拟对象，不能证明真实 Excel 布局、原生锚点或保存行为一致。
 
-各阶段记录：[Phase 1](PHASE1.md)、[Phase 2](PHASE2.md)、[Phase 3](PHASE3.md)、[Phase 4](PHASE4.md)。
+内部开发记录不随 Cloudflare 生产构建发布；线上页面只包含用户可用功能、安装说明和帮助内容。
 
 ## GitHub 与 Cloudflare 公共使用
 
@@ -216,6 +220,6 @@ Cloudflare 托管页面，Excel 通过 manifest 加载插件。小范围测试�
 ## 后续
 
 - 完成 Windows/macOS 原生 Excel 验收，记录实际版本、能力、布局和保存结果。
-- 单独设计并实现输出新工作簿的实际 Convert，不改变预览操作的只保留原公式约定。
+- 在真实样本证明等价后，为特定不支持函数增加单独转换规则；不使用通用字符串替换公式。
 
 此项目与 WPS / Microsoft 没有官方关联。公开源码不自动授予开源许可；仓库许可由维护者另行选择。
