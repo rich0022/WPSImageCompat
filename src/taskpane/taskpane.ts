@@ -216,6 +216,7 @@ function displayConversion(result: WorkbookConversionResult): void {
     broken: result.unresolvedBrokenReferences });
   status.textContent = statusText();
   renderResults();
+  void watchWorksheetImages().catch(() => { /* Shape activation is optional; the list remains available. */ });
 }
 async function runAction(operation: string, action: (signal: AbortSignal) => Promise<void>, cancellable = true): Promise<void> {
   if (!ready || busy) return;
