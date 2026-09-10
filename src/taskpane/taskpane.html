@@ -20,6 +20,11 @@
       <p class="hint" data-i18n="updateHint">Reloads this pane and clears its scan results. Existing worksheet previews stay in place.</p>
     </section>
     <p id="host-status" role="status">Connecting to Excel…</p>
+    <div class="language-row">
+      <label for="addin-enabled" data-i18n="addinEnabled">Enable WPS Image Compat</label>
+      <input id="addin-enabled" type="checkbox" checked />
+    </div>
+    <p id="addin-paused-hint" class="hint" data-i18n="addinPausedHint" hidden>Paused. Existing images and cells are unchanged.</p>
     <details class="work-section" aria-labelledby="compatibility-title">
       <summary id="compatibility-title" data-i18n="compatTitle">Compatibility check</summary>
       <p class="hint" data-i18n="compatIntro"></p>

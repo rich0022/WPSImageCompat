@@ -25,6 +25,7 @@ export const en = {
 
   badge: 'Compatibility & images', intro: 'Check compatibility and preview WPS cell images while keeping your formulas.',
   language: 'Language', auto: 'Follow Excel', detected: 'Detected:', images: 'WPS images', excelImages: 'Excel image shapes',
+  addinEnabled: 'Enable WPS Image Compat', addinPausedHint: 'Paused. Existing images and cells are unchanged.',
   sheets: 'Worksheets with images', parsed: 'Resources parsed', missing: 'Missing resources', errors: 'Resource errors',
   scan: 'Scan Workbook', show: 'Show Images', refresh: 'Refresh Images', remove: 'Remove Preview Images', repairDamagedImages: 'Repair metadata code cells', repairComplete: '{restored} images restored · {cleared} code cells cleared.', viewImages: 'View large images',
   imageViewerTitle: 'Image viewer', imageViewerClose: 'Close', imageViewerHint: 'Double-click an image to toggle its enlarged size.', imageViewerOpen: 'View image',
@@ -118,6 +119,7 @@ export const zhCN: Record<MessageKey, string> = {
 
   badge: '兼容检查与图片预览', intro: '检查兼容风险，预览 WPS 单元格图片，并保留原始公式。',
   language: '语言', auto: '跟随 Excel', detected: '已检测：', images: '张 WPS 图片', excelImages: '张 Excel 图片',
+  addinEnabled: '启用 WPS Image Compat', addinPausedHint: '已暂停。现有图片和单元格不会被修改。',
   sheets: '包含图片的工作表', parsed: '成功解析的资源', missing: '缺失资源', errors: '资源错误',
   scan: '扫描工作簿', show: '显示图片', refresh: '刷新图片', remove: '移除预览图片', repairDamagedImages: '修复显示为代码的图片单元格', repairComplete: '已恢复 {restored} 张图片 · 已清除 {cleared} 个代码单元格。', viewImages: '查看大图',
   imageViewerTitle: '图片查看器', imageViewerClose: '关闭', imageViewerHint: '双击图片可切换放大尺寸。', imageViewerOpen: '查看图片', convert: '转换工作簿',

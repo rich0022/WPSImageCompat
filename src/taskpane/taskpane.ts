@@ -22,6 +22,7 @@ import { createUpdateChecker, canApplyUpdate } from '../core/update-checker';
 import type { ReleaseInfo } from '../core/update-checker';
 import { languagePreference, resolveLocale, translate, errorText } from './i18n';
 import type { LanguagePreference, MessageKey, MessageParams } from './i18n';
+import { featureEnabledPreference } from './feature-toggle';
 
 const element = <T extends HTMLElement>(id: string): T => {
   const result = document.getElementById(id);
@@ -32,9 +33,14 @@ const status = element('scan-status');
 const hostStatus = element('host-status');
 const languageSelect = element<HTMLSelectElement>('language');
 const autoToggleWorksheetImage = element<HTMLInputElement>('auto-toggle-worksheet-image');
+const addinEnabled = element<HTMLInputElement>('addin-enabled');
 const languageKey = 'wps-image-compat.language';
+const featureEnabledKey = 'wps-image-compat.enabled';
 let preference: LanguagePreference = 'auto';
 try { preference = languagePreference(localStorage.getItem(languageKey)); } catch { /* Restricted storage: use this session. */ }
+let featuresEnabled = true;
+try { featuresEnabled = featureEnabledPreference(localStorage.getItem(featureEnabledKey)); } catch { /* Restricted storage: use this session. */ }
+addinEnabled.checked = featuresEnabled;
 let officeLanguage: string | undefined;
 let locale = resolveLocale(preference, officeLanguage, navigator.language);
 const t = (key: MessageKey, params?: MessageParams) => translate(locale, key, params);
@@ -59,12 +65,13 @@ const worksheetImageToggles = new Set<string>();
 let activatedWorksheetImage: ManagedWorksheetImage | undefined;
 /** Watches worksheet selection so the optional automatic behavior and manual control use the same image. */
 async function enableWorksheetImageInteraction(): Promise<void> {
-  if (!canObserveWorksheetImageSelection()) return;
+  if (!featuresEnabled || !canObserveWorksheetImageSelection()) return;
   await watchManagedWorksheetImages(active => {
     const key = `${active.worksheetName}\u0000${active.shapeId}`;
     void (async () => {
       let toggling = false;
       try {
+        if (!featuresEnabled) return;
         const image = (await listManagedWorksheetImages()).find(item =>
           item.worksheetName === active.worksheetName && item.shapeId === active.shapeId);
         if (!image) return;
@@ -94,23 +101,26 @@ function setStatus(key: MessageKey, params?: MessageParams): void {
   status.textContent = statusText();
 }
 function updateControls(): void {
-  element<HTMLButtonElement>('compatibility').disabled = !ready || busy;
-  element<HTMLButtonElement>('compatibility-download').disabled = !lastCompatibility || busy;
-  element<HTMLButtonElement>('scan').disabled = !ready || busy;
-  for (const id of ['show', 'refresh', 'remove']) element<HTMLButtonElement>(id).disabled = !shapesReady || busy;
-  element<HTMLButtonElement>('repair-damaged-images').disabled = !shapesReady || busy;
+  const unavailable = !featuresEnabled || busy;
+  addinEnabled.disabled = busy;
+  element<HTMLButtonElement>('compatibility').disabled = !ready || unavailable;
+  element<HTMLButtonElement>('compatibility-download').disabled = !featuresEnabled || !lastCompatibility || busy;
+  element<HTMLButtonElement>('scan').disabled = !ready || unavailable;
+  for (const id of ['show', 'refresh', 'remove']) element<HTMLButtonElement>(id).disabled = !shapesReady || unavailable;
+  element<HTMLButtonElement>('repair-damaged-images').disabled = !shapesReady || unavailable;
   const toggleSelected = element<HTMLButtonElement>('toggle-selected-image');
-  toggleSelected.disabled = !activatedWorksheetImage || busy;
+  toggleSelected.disabled = !featuresEnabled || !activatedWorksheetImage || busy;
   toggleSelected.textContent = t(activatedWorksheetImage?.zoomed ? 'restoreSelectedImage' : 'zoomSelectedImage');
-  element<HTMLFieldSetElement>('preview-settings').disabled = !shapesReady || busy;
-  element<HTMLFieldSetElement>('conversion-settings').disabled = !ready || busy;
+  element<HTMLFieldSetElement>('preview-settings').disabled = !shapesReady || unavailable;
+  element<HTMLFieldSetElement>('conversion-settings').disabled = !ready || unavailable;
   const selectedConversion = element<HTMLInputElement>('convert-dispimg').checked ||
     element<HTMLInputElement>('freeze-unsupported').checked || element<HTMLInputElement>('freeze-external').checked;
-  element<HTMLButtonElement>('convert').disabled = !ready || busy || !selectedConversion ||
+  element<HTMLButtonElement>('convert').disabled = !ready || unavailable || !selectedConversion ||
     !element<HTMLInputElement>('conversion-confirm').checked;
-  element<HTMLButtonElement>('cancel').disabled = !busy || !cancelAllowed || !!controller?.signal.aborted;
-  element<HTMLButtonElement>('diagnostics').disabled = !host || busy;
-  element<HTMLButtonElement>('apply-update').disabled = !canApplyUpdate(busy, availableUpdate);
+  element<HTMLButtonElement>('cancel').disabled = !featuresEnabled || !busy || !cancelAllowed || !!controller?.signal.aborted;
+  element<HTMLButtonElement>('diagnostics').disabled = !featuresEnabled || !host || busy;
+  element<HTMLButtonElement>('apply-update').disabled = !featuresEnabled || !canApplyUpdate(busy, availableUpdate);
+  element('addin-paused-hint').hidden = featuresEnabled;
   element('update-panel').hidden = !availableUpdate;
   element('update-status').textContent = availableUpdate ?
     t('updateAvailable', { version: availableUpdate.version }) + (busy ? ' ' + t('updateBusy') : '') : '';
@@ -236,7 +246,7 @@ function displayConversion(result: WorkbookConversionResult): void {
   void enableWorksheetImageInteraction().catch(() => { /* Direct worksheet interaction is optional. */ });
 }
 async function runAction(operation: string, action: (signal: AbortSignal) => Promise<void>, cancellable = true, preserveResults = false): Promise<void> {
-  if (!ready || busy) return;
+  if (!featuresEnabled || !ready || busy) return;
   busy = true;
   cancelAllowed = cancellable;
   controller = new AbortController();
@@ -257,6 +267,16 @@ languageSelect.addEventListener('change', () => {
   try { localStorage.setItem(languageKey, preference); } catch { /* Language still changes for this session. */ }
   applyLanguage();
 });
+addinEnabled.addEventListener('change', () => {
+  featuresEnabled = addinEnabled.checked;
+  try { localStorage.setItem(featureEnabledKey, String(featuresEnabled)); } catch { /* Preference still applies in this pane. */ }
+  if (!featuresEnabled) activatedWorksheetImage = undefined;
+  if (featuresEnabled && shapesReady) {
+    void normalizeManagedWorksheetImageMetadata().then(enableWorksheetImageInteraction)
+      .catch(() => { /* Legacy cleanup and image observation are optional. */ });
+  }
+  updateControls();
+});
 applyLanguage();
 const timeout = window.setTimeout(() => {
   if (!ready) { hostText = () => t('connectionTimeout'); hostStatus.textContent = hostText(); }
@@ -274,7 +294,7 @@ if (typeof Office === 'undefined') {
     if (!host.scan) { hostText = () => t('scanUnsupported'); applyLanguage(); return; }
     ready = true;
     shapesReady = canRenderImages();
-    if (shapesReady) void normalizeManagedWorksheetImageMetadata()
+    if (featuresEnabled && shapesReady) void normalizeManagedWorksheetImageMetadata()
       .then(enableWorksheetImageInteraction).catch(() => { /* Legacy image cleanup is optional. */ });
     hostText = () => t('connected', { platform: String(info.platform) }) + (shapesReady ? '' : ' · ' + t('scanOnly'));
     applyLanguage();
