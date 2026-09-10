@@ -1,7 +1,7 @@
 import type { ImageMapping } from '../types/wps';
 import type { CellBox, PreviewSettings } from './image-layout';
 import { imageLayout } from './image-layout';
-import { CONVERTED_MARKER, convertedName, isPreviewShape, matchesConverted, matchesPreview, PREVIEW_MARKER, previewName } from './preview-identity';
+import { CONVERTED_MARKER, convertedName, isPreviewShape, matchesConverted, matchesPreview, PREVIEW_MARKER, previewName, readableDescription } from './preview-identity';
 import { parseDispimgFormula } from './dispimg-formula';
 import { WorkbookError } from '../utils/errors';
 
@@ -120,7 +120,7 @@ export async function renderImages(
         created.push(added);
         shape.name = target.name;
         shape.altTextTitle = mode === 'convert' ? CONVERTED_MARKER : PREVIEW_MARKER;
-        shape.altTextDescription = JSON.stringify({ imageId: target.mapping.cell.imageId, address: target.mapping.cell.address });
+        shape.altTextDescription = readableDescription(mode === 'convert' ? 'converted' : 'preview', target.mapping.cell.address);
         shape.visible = false;
         shape.load('width,height');
         await context.sync();
@@ -131,8 +131,11 @@ export async function renderImages(
         shape.height = layout.height;
         shape.left = layout.left;
         shape.top = layout.top;
-        shape.altTextDescription = JSON.stringify({ imageId: target.mapping.cell.imageId, address: target.mapping.cell.address,
-          fitInsideCell: settings.fitInsideCell, offsetLeft: layout.left - target.box.left, offsetTop: layout.top - target.box.top });
+        const metadata = { fitInsideCell: settings.fitInsideCell, offsetLeft: layout.left - target.box.left, offsetTop: layout.top - target.box.top,
+          original: { left: layout.left, top: layout.top, width: layout.width, height: layout.height, placement: 'TwoCell' as const } };
+        shape.name = mode === 'convert' ? convertedName(target.mapping.cell.imageId, target.mapping.cell.address, runId, metadata) :
+          previewName(target.mapping.cell.imageId, target.mapping.cell.address, runId, metadata);
+        shape.altTextDescription = readableDescription(mode === 'convert' ? 'converted' : 'preview', target.mapping.cell.address);
         shape.placement = Excel.Placement.twoCell;
         shape.lockAspectRatio = settings.keepAspectRatio;
         shape.visible = true;

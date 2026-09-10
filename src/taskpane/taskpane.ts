@@ -11,6 +11,8 @@ import { showWorkbookImages } from '../core/preview-controller';
 import { canRenderImages, removePreviewImages } from '../core/image-renderer';
 import type { PreviewResult } from '../core/image-renderer';
 import { collectViewableImages, createImageViewer } from './image-viewer';
+import { listManagedWorksheetImages, toggleWorksheetImageZoom } from '../core/worksheet-image-zoom';
+import type { ManagedWorksheetImage } from '../core/worksheet-image-zoom';
 import { WorkbookError } from '../utils/errors';
 import { createDiagnosticReport, readHostCapabilities } from '../core/diagnostics';
 import type { HostCapabilities } from '../core/diagnostics';
@@ -50,6 +52,24 @@ let availableUpdate: ReleaseInfo | undefined;
 let statusText: () => string = () => '';
 let hostText = () => t('connecting');
 const imageViewer = createImageViewer();
+let managedWorksheetImages: ManagedWorksheetImage[] = [];
+function renderManagedWorksheetImages(): void {
+  const panel = element('worksheet-image-panel'); const list = element('worksheet-image-list');
+  panel.hidden = !managedWorksheetImages.length; list.replaceChildren();
+  for (const image of managedWorksheetImages) {
+    const item = document.createElement('li');
+    const button = document.createElement('button'); button.className = 'location-button';
+    button.textContent = image.zoomed ? t('worksheetImageRestore') : t('worksheetImageZoom');
+    button.addEventListener('click', () => void runAction('worksheet-image-zoom', async () => {
+      const zoomed = await toggleWorksheetImageZoom(image);
+      managedWorksheetImages = await listManagedWorksheetImages();
+      renderManagedWorksheetImages();
+      setStatus(zoomed ? 'worksheetImageZoomed' : 'worksheetImageRestored');
+    }, false));
+    item.append(`${image.worksheetName}!${image.address} · ${image.kind === 'converted' ? t('worksheetImageConverted') : t('worksheetImagePreview')} · `, button);
+    list.append(item);
+  }
+}
 function setStatus(key: MessageKey, params?: MessageParams): void {
   statusText = () => t(key, params);
   status.textContent = statusText();
@@ -60,6 +80,7 @@ function updateControls(): void {
   element<HTMLButtonElement>('scan').disabled = !ready || busy;
   for (const id of ['show', 'refresh', 'remove']) element<HTMLButtonElement>(id).disabled = !shapesReady || busy;
   element<HTMLButtonElement>('view-images').disabled = !imageViewer.hasImages() || busy;
+  element<HTMLButtonElement>('manage-worksheet-images').disabled = !ready || busy;
   element<HTMLFieldSetElement>('preview-settings').disabled = !shapesReady || busy;
   element<HTMLFieldSetElement>('conversion-settings').disabled = !ready || busy;
   const selectedConversion = element<HTMLInputElement>('convert-dispimg').checked ||
@@ -144,6 +165,7 @@ function applyLanguage(): void {
   status.textContent = statusText();
   hostStatus.textContent = hostText();
   imageViewer.setImages(collectViewableImages(lastDetection?.mappings), t('imageViewerOpen'));
+  renderManagedWorksheetImages();
   renderResults();
   updateControls();
 }
@@ -155,6 +177,8 @@ function clearResults(): void {
   lastErrorCode = undefined;
   lastErrorMessage = undefined;
   imageViewer.setImages([], t('imageViewerOpen'));
+  managedWorksheetImages = [];
+  renderManagedWorksheetImages();
   for (const id of ['image-count', 'sheet-count', 'parsed-count', 'missing-count', 'error-count']) element(id).textContent = '—';
   renderResults();
 }
@@ -300,6 +324,11 @@ element('view-images').addEventListener('click', () => {
   if (busy || !imageViewer.hasImages()) return;
   document.querySelector<HTMLButtonElement>('.image-viewer-thumbnail')?.click();
 });
+element('manage-worksheet-images').addEventListener('click', () => void runAction('worksheet-images', async () => {
+  managedWorksheetImages = await listManagedWorksheetImages();
+  renderManagedWorksheetImages();
+  setStatus(managedWorksheetImages.length ? 'worksheetImagesReady' : 'worksheetImagesEmpty');
+}, false));
 element('cancel').addEventListener('click', () => {
   if (!busy || !cancelAllowed) return;
   controller?.abort();

@@ -39,6 +39,7 @@
       <button id="show" data-i18n="show" disabled>Show Images</button><button id="refresh" data-i18n="refresh" disabled>Refresh Images</button>
       <button id="remove" data-i18n="remove" disabled>Remove Preview Images</button>
       <button id="view-images" data-i18n="viewImages" disabled>View large images</button>
+      <button id="manage-worksheet-images" data-i18n="manageWorksheetImages" disabled>Enlarge worksheet image</button>
       <button id="cancel" data-i18n="cancel" disabled>Cancel Scan / Read</button>
       <button id="diagnostics" data-i18n="diagnostics" disabled>Download Diagnostics</button>
     </div>
@@ -59,6 +60,10 @@
     <p class="hint" data-i18n="privacy"></p>
     <p id="scan-status" role="status" aria-live="polite"></p>
     <ul id="results" aria-label="Detected image cells" data-i18n-label="results"></ul>
+    <section id="worksheet-image-panel" class="summary" hidden><h2 data-i18n="worksheetImageTitle">Worksheet images</h2>
+      <p class="hint" data-i18n="worksheetImageHint">Choose a plugin image to enlarge it over the worksheet; choose again to restore it.</p>
+      <ul id="worksheet-image-list"></ul>
+    </section>
     <section id="image-viewer" class="image-viewer" role="dialog" aria-modal="true" aria-labelledby="image-viewer-title" hidden>
       <div class="image-viewer-dialog"><div class="image-viewer-heading"><h2 id="image-viewer-title" data-i18n="imageViewerTitle">Image viewer</h2>
         <button id="image-viewer-close" type="button" data-i18n="imageViewerClose">Close</button></div>
