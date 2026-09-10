@@ -12,7 +12,7 @@ import { canRenderImages, removePreviewImages } from '../core/image-renderer';
 import type { PreviewResult } from '../core/image-renderer';
 import { scanExcelImages } from '../core/excel-image-scanner';
 import type { ExcelImageScanResult } from '../core/excel-image-scanner';
-import { normalizeManagedWorksheetImageMetadata } from '../core/worksheet-image-zoom';
+import { canObserveWorksheetImageSelection, listManagedWorksheetImages, normalizeManagedWorksheetImageMetadata, toggleWorksheetImageZoom, watchManagedWorksheetImages } from '../core/worksheet-image-zoom';
 import { WorkbookError } from '../utils/errors';
 import { createDiagnosticReport, readHostCapabilities } from '../core/diagnostics';
 import type { HostCapabilities } from '../core/diagnostics';
@@ -52,6 +52,27 @@ let lastOperation = 'initialize';
 let availableUpdate: ReleaseInfo | undefined;
 let statusText: () => string = () => '';
 let hostText = () => t('connecting');
+const worksheetImageToggles = new Set<string>();
+/** Keeps image enlargement inside the worksheet; no task-pane controls are required. */
+async function enableWorksheetImageInteraction(): Promise<void> {
+  if (!canObserveWorksheetImageSelection()) return;
+  await watchManagedWorksheetImages(active => {
+    const key = `${active.worksheetName}\u0000${active.shapeId}`;
+    if (busy || worksheetImageToggles.has(key)) return;
+    worksheetImageToggles.add(key);
+    void (async () => {
+      try {
+        const image = (await listManagedWorksheetImages()).find(item =>
+          item.worksheetName === active.worksheetName && item.shapeId === active.shapeId);
+        if (!image) return;
+        const zoomed = await toggleWorksheetImageZoom(image);
+        setStatus(zoomed ? 'worksheetImageZoomed' : 'worksheetImageRestored');
+      } catch {
+        // An image may have been removed or a sheet protected after it was selected.
+      } finally { worksheetImageToggles.delete(key); }
+    })();
+  });
+}
 function setStatus(key: MessageKey, params?: MessageParams): void {
   statusText = () => t(key, params);
   status.textContent = statusText();
@@ -182,6 +203,7 @@ function displayPreview(result: PreviewResult): void {
     (result.issues.length ? ' ' + t('issueCount', { count: result.issues.length }) : '') + ' ' + t('preserved');
   status.textContent = statusText();
   renderResults();
+  void enableWorksheetImageInteraction().catch(() => { /* Direct worksheet interaction is optional. */ });
 }
 function displayConversion(result: WorkbookConversionResult): void {
   lastConversion = result;
@@ -190,6 +212,7 @@ function displayConversion(result: WorkbookConversionResult): void {
     broken: result.unresolvedBrokenReferences });
   status.textContent = statusText();
   renderResults();
+  void enableWorksheetImageInteraction().catch(() => { /* Direct worksheet interaction is optional. */ });
 }
 async function runAction(operation: string, action: (signal: AbortSignal) => Promise<void>, cancellable = true, preserveResults = false): Promise<void> {
   if (!ready || busy) return;
@@ -230,7 +253,8 @@ if (typeof Office === 'undefined') {
     if (!host.scan) { hostText = () => t('scanUnsupported'); applyLanguage(); return; }
     ready = true;
     shapesReady = canRenderImages();
-    if (shapesReady) void normalizeManagedWorksheetImageMetadata().catch(() => { /* Legacy image cleanup is optional. */ });
+    if (shapesReady) void normalizeManagedWorksheetImageMetadata()
+      .then(enableWorksheetImageInteraction).catch(() => { /* Legacy image cleanup is optional. */ });
     hostText = () => t('connected', { platform: String(info.platform) }) + (shapesReady ? '' : ' · ' + t('scanOnly'));
     applyLanguage();
   }).catch(() => {
