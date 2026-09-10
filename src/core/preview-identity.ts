@@ -8,6 +8,20 @@ export interface ShapeMetadata {
   original?: { left: number; top: number; width: number; height: number; placement: 'TwoCell' | 'Absolute' };
   zoomed?: boolean;
 }
+/**
+ * Excel's manual “Place in Cell” command copies a picture's description into
+ * the cell value. Keep this small, address-bound payload so the add-in can
+ * recognize that value and restore the actual image later.
+ */
+export function inCellRecoveryMetadata(metadata: Pick<ShapeMetadata, 'imageId' | 'address' | 'fitInsideCell' | 'offsetLeft' | 'offsetTop'>): string {
+  return JSON.stringify({
+    imageId: metadata.imageId,
+    address: metadata.address,
+    fitInsideCell: metadata.fitInsideCell !== false,
+    offsetLeft: metadata.offsetLeft ?? 0,
+    offsetTop: metadata.offsetTop ?? 0,
+  });
+}
 export interface PreviewShapeInfo extends CellBox { id: string; name: string; altTextTitle: string; altTextDescription: string; }
 const encodedPrefix = 'v2.';
 function toBase64(value: string): string {

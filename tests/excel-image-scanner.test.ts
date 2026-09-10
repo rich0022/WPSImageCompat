@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { canScanExcelImages, scanExcelImages } from '../src/core/excel-image-scanner';
-import { CONVERTED_MARKER } from '../src/core/preview-identity';
+import { CONVERTED_MARKER, inCellRecoveryMetadata } from '../src/core/preview-identity';
 import { normalizeManagedWorksheetImageMetadata } from '../src/core/worksheet-image-zoom';
 
 function restore(key: 'Excel' | 'Office', descriptor: PropertyDescriptor | undefined): void {
@@ -43,7 +43,7 @@ test('returns an unavailable result on hosts without picture-shape support', asy
   } finally { restore('Office', oldOffice); }
 });
 
-test('migrates legacy add-in image metadata into its name and clears the description', async () => {
+test('migrates legacy add-in image metadata into its name and preserves the cell-recovery description', async () => {
   const oldExcel = Object.getOwnPropertyDescriptor(globalThis, 'Excel');
   const oldOffice = Object.getOwnPropertyDescriptor(globalThis, 'Office');
   const shape = {
@@ -64,7 +64,7 @@ test('migrates legacy add-in image metadata into its name and clears the descrip
   try {
     await normalizeManagedWorksheetImageMetadata();
     assert.ok(shape.name.startsWith('WPSCONVERT_v2.'));
-    assert.equal(shape.altTextDescription, '');
+    assert.equal(shape.altTextDescription, inCellRecoveryMetadata({ imageId: 'ID_A', address: 'B2', fitInsideCell: true, offsetLeft: 2, offsetTop: 1 }));
   } finally {
     restore('Excel', oldExcel);
     restore('Office', oldOffice);

@@ -1,4 +1,4 @@
-import { CONVERTED_MARKER, convertedName, isConvertedShape, isPreviewShape, PREVIEW_MARKER, previewName, shapeMetadata } from './preview-identity';
+import { CONVERTED_MARKER, convertedName, inCellRecoveryMetadata, isConvertedShape, isPreviewShape, PREVIEW_MARKER, previewName, shapeMetadata } from './preview-identity';
 import { WorkbookError } from '../utils/errors';
 
 export interface ManagedWorksheetImage { worksheetName: string; shapeId: string; address: string; kind: 'preview' | 'converted'; zoomed: boolean; }
@@ -23,7 +23,7 @@ export async function listManagedWorksheetImages(): Promise<ManagedWorksheetImag
     }));
   });
 }
-/** Moves legacy metadata into the shape name and removes descriptions that macOS Excel may expose as cell text. */
+/** Moves legacy metadata into the shape name and restores the cell-recovery description. */
 export async function normalizeManagedWorksheetImageMetadata(): Promise<void> {
   requireShapes();
   await Excel.run(async context => {
@@ -40,7 +40,7 @@ export async function normalizeManagedWorksheetImageMetadata(): Promise<void> {
         shape.name = shapeKind === 'preview' ? previewName(metadata.imageId, metadata.address, crypto.randomUUID(), next) :
           convertedName(metadata.imageId, metadata.address, crypto.randomUUID(), next);
       }
-      if (shape.altTextDescription) shape.altTextDescription = '';
+      shape.altTextDescription = inCellRecoveryMetadata(metadata);
     }
     await context.sync();
   });

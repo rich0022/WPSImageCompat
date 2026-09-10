@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { renderImages, removePreviewImages } from '../src/core/image-renderer';
 import { DEFAULT_PREVIEW_SETTINGS } from '../src/core/image-layout';
 import { CONVERTED_MARKER, PREVIEW_MARKER } from '../src/core/preview-identity';
+import { damagedImageCell } from '../src/core/legacy-image-cell-metadata';
 import type { ImageMapping } from '../src/types/wps';
 
 function mapping(sheet = 'Sheet1', address = 'A1', imageId = 'ID_A'): ImageMapping {
@@ -113,6 +114,7 @@ test('conversion creates a permanent shape, replaces only its preview, and can r
     assert.equal(sheet.shapes.length, 1);
     assert.equal(sheet.shapes[0]!.altTextTitle, CONVERTED_MARKER);
     assert.ok(sheet.shapes[0]!.name.startsWith('WPSCONVERT_'));
+    assert.deepEqual(damagedImageCell(sheet.shapes[0]!.altTextDescription, 'A1'), { imageId: 'ID_A' });
     const repeated = await renderImages([mapping()], DEFAULT_PREVIEW_SETTINGS, 'convert');
     assert.equal(repeated.existing, 1);
     assert.equal(sheet.shapes.length, 1);
