@@ -19,6 +19,10 @@
   <p>在 Windows 和 macOS 桌面版 Excel 中扫描 WPS DISPIMG 公式，显示可移除的 PNG/JPEG 图片预览，并保留原始公式。</p>
   <p><a class="download" href="/manifest.xml" download="WPSImageCompat.xml">下载 Excel 加载项清单</a></p>
   <p>这是供 Excel 安装的 XML 清单。网站本身不能读取工作簿；安装后无需运行本地开发服务。</p>
+  <section><h2>WPS 表格安装</h2>
+    <p>Windows 或 Linux 上已安装 WPS 表格时，请打开专用的 <a class="download" href="/wps-et/publish.html">WPS 加载项安装页</a>，启用 <code>wps-image-compat-et</code> 后重新打开 WPS 表格。它与上方 Excel 清单相互独立。</p>
+    <p>WPS 工具箱只读扫描 DISPIMG 公式和 WPS 可公开读取的普通图片位置，不会修改当前工作簿。WPS 的图片置入单元格接口尚未完成跨版本验证。</p>
+  </section>
   <section><h2>macOS 安装</h2>
     <ol><li>下载上方清单，将它保存到 <code>~/Library/Containers/com.microsoft.Excel/Data/Documents/wef/</code>。目录不存在时先创建。</li>
     <li>保存工作并完全退出、重新打开 Excel，从「开始 → 加载项」菜单选择本插件。部分旧版界面使用「插入」下的加载项菜单，请以实际界面为准。侧载插件不一定出现在账户/商店的「我的加载项」窗口中，也不属于「开发工具 → Excel 加载项」。</li>

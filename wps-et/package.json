@@ -1,0 +1,12 @@
+{
+  "name": "wps-image-compat-et",
+  "version": "0.1.0",
+  "private": true,
+  "description": "WPS Spreadsheets add-in for WPS Image Compat",
+  "addonType": "et",
+  "scripts": {
+    "build": "vite build",
+    "package": "wpsjs build",
+    "publish": "wpsjs publish --serverUrl https://wpsimagecompat.fogce.workers.dev/wps-et/"
+  }
+}

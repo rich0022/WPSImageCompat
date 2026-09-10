@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>WPS Image Compat</title></head>
+<body>
+  <main><p class="eyebrow">WPS Spreadsheets</p><h1>兼容工具箱</h1>
+    <p class="intro">盘点当前 WPS 表格中的 DISPIMG 公式与可读取的 Excel 浮动图片。扫描只读取工作簿。</p>
+    <div class="actions"><button id="scan" class="primary">扫描工作簿</button><button id="select-first" disabled>选中首张图片</button></div>
+    <section class="metrics"><div><span>DISPIMG 公式</span><strong id="dispimg-count">—</strong></div><div><span>可读取图片</span><strong id="picture-count">—</strong></div><div><span>工作表</span><strong id="sheet-count">—</strong></div></section>
+    <p id="status" role="status">正在等待 WPS 表格。</p><ul id="results"></ul>
+  </main><script type="module" src="../src/taskpane.ts"></script>
+</body>
+</html>

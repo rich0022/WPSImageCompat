@@ -6,6 +6,9 @@ dist/
 !.env.example
 .wrangler/
 worker-configuration.d.ts
+wps-et/dist/
+wps-et/wps-addon-build/
+wps-et/wps-addon-publish/
 .dev.vars*
 *.xlsx
 *.xls

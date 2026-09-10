@@ -1,0 +1,11 @@
+<customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui" onLoad="OnAddinLoad">
+  <ribbon startFromScratch="false">
+    <tabs>
+      <tab id="WPSImageCompat.Tab" label="WPS Image Compat">
+        <group id="WPSImageCompat.Tools" label="兼容工具箱">
+          <button id="WPSImageCompat.Open" label="打开图片与兼容工具箱" onAction="OnAction" size="large"/>
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>

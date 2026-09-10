@@ -24,6 +24,12 @@ npm run dev
 
 macOS 上将下载文件替换为 `~/Library/Containers/com.microsoft.Excel/Data/Documents/wef/wps-image-compat.xml`，然后完全退出并重启 Excel。Windows 测试环境从共享加载项目录安装同一份生产清单；组织内多人使用时，由 Microsoft 365 管理员通过集中部署分发该生产清单。每位使用者都必须完成一次安装；Cloudflare 只能更新已经使用线上 URL 的任务窗格，不能远程替换用户本机的侧载清单。
 
+### WPS 表格专用加载项
+
+WPS 用户请在安装了桌面版 **WPS 表格** 的 Windows 或 Linux 电脑上，用浏览器打开 [WPS 安装页](https://wpsimagecompat.fogce.workers.dev/wps-et/publish.html)，启用 **wps-image-compat-et**，随后重新打开 WPS 表格。在功能区的 **WPS Image Compat** 标签中打开“图片与兼容工具箱”。
+
+这个加载项独立于 Excel 的 XML manifest：它只读取当前 WPS 表格中的 DISPIMG 公式和 WPS 可公开读取的普通图片 Shape，方便盘点来自 Excel 或 WPS 的图片位置；扫描不会修改公式、单元格或图片。WPS 的“图片置入单元格”在当前 JS API 没有稳定的跨版本读取接口，因此不把它计入已验证的可读取图片。完整范围、更新与排错见 [WPS_ADDIN.md](WPS_ADDIN.md)。
+
 线上版本打开、获得焦点及可见状态下每 5 分钟检查一次同源 `version.json`。有新构建时窗格出现“更新任务窗格”；点击后只刷新窗格，已有工作簿数据和预览图片不变。清单版本或 Ribbon/权限变更仍需重新安装清单。
 
 ### 本地开发版加载

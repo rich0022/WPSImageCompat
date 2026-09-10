@@ -5,5 +5,5 @@
     "strict": true, "noUncheckedIndexedAccess": true, "noUnusedLocals": true,
     "noUnusedParameters": true, "noEmit": true, "skipLibCheck": true
   },
-  "include": ["src", "tests", "scripts/**/*.ts", "vite.config.ts"]
+  "include": ["src", "tests", "scripts/**/*.ts", "vite.config.ts", "wps-et/src"]
 }

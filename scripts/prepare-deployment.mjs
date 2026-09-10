@@ -1,4 +1,4 @@
-import { readFile, writeFile, access } from 'node:fs/promises';
+import { readFile, writeFile, access, cp, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { XMLValidator } from 'fast-xml-parser';
 
@@ -15,6 +15,13 @@ for (const path of [
   'assets/icon-16.png', 'assets/icon-32.png', 'assets/icon-80.png',
 ]) {
   await access(new URL(`dist/${path}`, root));
+}
+const wpsSource = new URL('../wps-et/dist/', import.meta.url);
+const wpsTarget = new URL('../dist/wps-et/', import.meta.url);
+await rm(wpsTarget, { recursive: true, force: true });
+await cp(wpsSource, wpsTarget, { recursive: true });
+for (const path of ['manifest.xml', 'ribbon.xml', 'index.html', 'main.js', 'publish.html', 'ui/taskpane.html']) {
+  await access(new URL(`../dist/wps-et/${path}`, import.meta.url));
 }
 for (const path of ['PHASE1.md', 'PHASE2.md', 'PHASE3.md', 'PHASE4.md', 'RELEASE_0_6.md', 'RELEASE_0_7.md', 'RELEASE_0_8.md']) {
   try {
