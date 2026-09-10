@@ -2,14 +2,18 @@ import { cellAddress } from './dispimg-formula';
 
 export interface DamagedImageCell { worksheetName: string; address: string; imageId?: string; value: string; kind: 'json' | 'description' }
 
-/** Recognizes only the exact metadata format emitted by older add-in releases. */
-export function damagedImageCell(value: unknown, address: string): { imageId: string } | undefined {
+/**
+ * Recognizes recovery metadata emitted by the add-in. `address` records where
+ * the image was created, but users may move/copy a placed-in-cell image; the
+ * current cell is therefore the restoration target.
+ */
+export function damagedImageCell(value: unknown, _address: string): { imageId: string } | undefined {
   if (typeof value !== 'string') return undefined;
   try {
     const data: unknown = JSON.parse(value);
     if (!data || typeof data !== 'object') return undefined;
     const raw = data as Record<string, unknown>;
-    return typeof raw.imageId === 'string' && raw.imageId.startsWith('ID_') && raw.address === address &&
+    return typeof raw.imageId === 'string' && raw.imageId.startsWith('ID_') && typeof raw.address === 'string' && raw.address.length > 0 &&
       typeof raw.fitInsideCell === 'boolean' ? { imageId: raw.imageId } : undefined;
   } catch { return undefined; }
 }

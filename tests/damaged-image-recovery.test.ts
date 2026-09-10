@@ -7,9 +7,9 @@ function restore(key: 'Excel', descriptor: PropertyDescriptor | undefined): void
   else Reflect.deleteProperty(globalThis, key);
 }
 
-test('finds a valid in-cell recovery payload when Excel exposes it only through formulas', async () => {
+test('finds a valid moved in-cell recovery payload when Excel exposes it only through formulas', async () => {
   const oldExcel = Object.getOwnPropertyDescriptor(globalThis, 'Excel');
-  const value = JSON.stringify({ imageId: 'ID_A', address: 'C2', fitInsideCell: true, offsetLeft: 4, offsetTop: 1 });
+  const value = JSON.stringify({ imageId: 'ID_A', address: 'C5', fitInsideCell: true, offsetLeft: 4, offsetTop: 1 });
   const used = {
     isNullObject: false, rowIndex: 0, columnIndex: 0, rowCount: 2, columnCount: 3, load() {},
   };
