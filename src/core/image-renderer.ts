@@ -5,6 +5,7 @@ import { CONVERTED_MARKER, convertedName, inCellRecoveryMetadata, isPreviewShape
 import { parseDispimgFormula } from './dispimg-formula';
 import { WorkbookError } from '../utils/errors';
 import { damagedImageMetadataValue } from './legacy-image-cell-metadata';
+import { rememberImageResources } from './image-cache';
 
 export interface PreviewIssue { location: string; message: string; code?: string }
 export interface PreviewResult { inserted: number; existing: number; removed: number; skipped: number; issues: PreviewIssue[]; renderedCells?: ImageMapping['cell'][] }
@@ -27,6 +28,7 @@ export async function renderImages(
   onProgress?: (completed: number, total: number) => void,
 ): Promise<PreviewResult> {
   requireShapes();
+  rememberImageResources(mappings.map(mapping => mapping.resource));
   if (mode === 'refresh' && mappings.some(item => item.status !== 'found' || !item.resource?.base64)) {
     throw new WorkbookError('REFRESH_UNRESOLVED', 'Refresh stopped: some image resources are missing or invalid. Existing previews were kept.');
   }

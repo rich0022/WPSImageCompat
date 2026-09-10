@@ -381,7 +381,7 @@ element('repair-damaged-images').addEventListener('click', () => void runAction(
     fitInsideCell: element<HTMLInputElement>('fit-inside-cell').checked,
   });
   displayPreview(recovered.preview);
-  statusText = () => t('repairComplete', { restored: recovered.restored, cleared: recovered.cleared });
+  statusText = () => t('repairComplete', { detected: recovered.detected, restored: recovered.restored, cleared: recovered.cleared });
   status.textContent = statusText();
 }, false));
 element('toggle-selected-image').addEventListener('click', () => {

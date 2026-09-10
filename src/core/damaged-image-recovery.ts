@@ -1,11 +1,11 @@
-import { WorkbookError } from '../utils/errors';
 import type { PreviewSettings } from './image-layout';
 import { scanDamagedImageCells, damagedImageMetadataValue, type DamagedImageCell } from './legacy-image-cell-metadata';
 import { readWorkbook } from './workbook-reader';
 import { parseWpsImages } from './wps-image-parser';
-import { mapImages } from './image-mapper';
 import { renderImages, type PreviewResult } from './image-renderer';
 import { isConvertedShape, shapeMetadata } from './preview-identity';
+import { cachedImageResource, rememberImageResources } from './image-cache';
+import type { ImageMapping, WpsImageResource } from '../types/wps';
 
 export interface DamagedImageRecoveryResult { detected: number; restored: number; cleared: number; preview: PreviewResult }
 
@@ -66,10 +66,22 @@ export async function recoverDamagedImageCells(settings: PreviewSettings): Promi
     const cleared = await clearRecoveredCells(alreadyRestored);
     return { detected: damaged.length, restored: alreadyRestored.length, cleared, preview: empty };
   }
-  const bytes = await readWorkbook();
-  const parsed = await parseWpsImages(bytes);
-  if (!parsed.hasCellImages) throw new WorkbookError('RESOURCES_UNAVAILABLE', 'This workbook no longer contains the WPS image resources needed to repair metadata cells.');
-  const mappings = mapImages(needingResource.map(cell => ({ ...cell, formula: '' })), parsed);
+  const resources = new Map<string, WpsImageResource>();
+  for (const cell of needingResource) {
+    const cached = cachedImageResource(cell.imageId);
+    if (cached) resources.set(cell.imageId, cached);
+  }
+  const unresolved = needingResource.filter(cell => !resources.has(cell.imageId));
+  if (unresolved.length) {
+    const bytes = await readWorkbook();
+    const parsed = await parseWpsImages(bytes);
+    rememberImageResources(parsed.resources.values());
+    for (const [imageId, resource] of parsed.resources) resources.set(imageId, resource);
+  }
+  const mappings: ImageMapping[] = needingResource.map(cell => {
+    const resource = resources.get(cell.imageId);
+    return { cell: { ...cell, formula: '' }, resource, status: resource ? 'found' : 'missing' };
+  });
   const preview = await renderImages(mappings, settings, 'recover');
   const rendered = preview.renderedCells ?? [];
   const restored = new Set(rendered.map(cell => `${cell.worksheetName}\u0000${cell.address}\u0000${cell.imageId}`));
