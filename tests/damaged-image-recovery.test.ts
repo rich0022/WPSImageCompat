@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { scanDamagedImageCells } from '../src/core/legacy-image-cell-metadata';
+import { scanDamagedImageCells, scanSelectedDamagedImageCell } from '../src/core/legacy-image-cell-metadata';
 
 function restore(key: 'Excel', descriptor: PropertyDescriptor | undefined): void {
   if (descriptor) Object.defineProperty(globalThis, key, descriptor);
@@ -25,5 +25,22 @@ test('finds a valid moved in-cell recovery payload when Excel exposes it only th
   } });
   try {
     assert.deepEqual(await scanDamagedImageCells(), [{ worksheetName: 'Sheet1', address: 'C2', imageId: 'ID_A', value, kind: 'json' }]);
+  } finally { restore('Excel', oldExcel); }
+});
+
+test('reads only the selected metadata cell for a targeted repair', async () => {
+  const oldExcel = Object.getOwnPropertyDescriptor(globalThis, 'Excel');
+  const value = JSON.stringify({ imageId: 'ID_A', address: 'C5', fitInsideCell: true, offsetLeft: 4, offsetTop: 1 });
+  const sheet = { name: 'Selected sheet', load() {} };
+  const cell = {
+    worksheet: sheet, rowIndex: 4, columnIndex: 2, formulas: [[value]], values: [['Picture']], text: [['Picture']], load() {},
+  };
+  Object.defineProperty(globalThis, 'Excel', { configurable: true, value: {
+    run: async (callback: (context: unknown) => unknown) => callback({
+      workbook: { getSelectedRange: () => ({ getCell: () => cell }) }, sync: async () => {},
+    }),
+  } });
+  try {
+    assert.deepEqual(await scanSelectedDamagedImageCell(), [{ worksheetName: 'Selected sheet', address: 'C5', imageId: 'ID_A', value, kind: 'json' }]);
   } finally { restore('Excel', oldExcel); }
 });

@@ -67,3 +67,20 @@ export async function scanDamagedImageCells(): Promise<DamagedImageCell[]> {
     return cells;
   });
 }
+
+/** Read only the first cell of the current Excel selection for a targeted repair. */
+export async function scanSelectedDamagedImageCell(): Promise<DamagedImageCell[]> {
+  return Excel.run(async context => {
+    const selected = context.workbook.getSelectedRange();
+    const cell = selected.getCell(0, 0);
+    const sheet = cell.worksheet;
+    cell.load('rowIndex,columnIndex,formulas,values,text');
+    sheet.load('name');
+    await context.sync();
+    const address = cellAddress(cell.rowIndex, cell.columnIndex);
+    const metadata = damagedImageMetadataValue([
+      cell.formulas[0]?.[0], cell.values[0]?.[0], cell.text?.[0]?.[0],
+    ], address);
+    return metadata ? [{ worksheetName: sheet.name, address, ...metadata }] : [];
+  });
+}

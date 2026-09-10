@@ -1,5 +1,5 @@
 import type { PreviewSettings } from './image-layout';
-import { scanDamagedImageCells, damagedImageMetadataValue, type DamagedImageCell } from './legacy-image-cell-metadata';
+import { scanDamagedImageCells, scanSelectedDamagedImageCell, damagedImageMetadataValue, type DamagedImageCell } from './legacy-image-cell-metadata';
 import { readWorkbook } from './workbook-reader';
 import { parseWpsImages } from './wps-image-parser';
 import { renderImages, type PreviewResult } from './image-renderer';
@@ -51,9 +51,8 @@ async function existingConvertedImages(): Promise<Map<string, string>> {
   });
 }
 
-/** Restores only cells containing verified old metadata, and clears them only after a permanent picture exists. */
-export async function recoverDamagedImageCells(settings: PreviewSettings): Promise<DamagedImageRecoveryResult> {
-  const damaged = await scanDamagedImageCells();
+/** Restores verified metadata cells and clears their code only after a permanent picture exists. */
+async function recoverImageCells(damaged: DamagedImageCell[], settings: PreviewSettings): Promise<DamagedImageRecoveryResult> {
   const empty: PreviewResult = { inserted: 0, existing: 0, removed: 0, skipped: 0, issues: [] };
   if (!damaged.length) return { detected: 0, restored: 0, cleared: 0, preview: empty };
   const existing = await existingConvertedImages();
@@ -88,4 +87,14 @@ export async function recoverDamagedImageCells(settings: PreviewSettings): Promi
   const repaired = [...alreadyRestored, ...needingResource.filter(cell => restored.has(`${cell.worksheetName}\u0000${cell.address}\u0000${cell.imageId}`))];
   const cleared = await clearRecoveredCells(repaired);
   return { detected: damaged.length, restored: alreadyRestored.length + rendered.length, cleared, preview };
+}
+
+/** Restores every verified metadata cell in the workbook. */
+export async function recoverDamagedImageCells(settings: PreviewSettings): Promise<DamagedImageRecoveryResult> {
+  return recoverImageCells(await scanDamagedImageCells(), settings);
+}
+
+/** Restores only the currently selected metadata cell. */
+export async function recoverSelectedDamagedImageCell(settings: PreviewSettings): Promise<DamagedImageRecoveryResult> {
+  return recoverImageCells(await scanSelectedDamagedImageCell(), settings);
 }
