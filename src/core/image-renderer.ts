@@ -1,7 +1,7 @@
 import type { ImageMapping } from '../types/wps';
 import type { CellBox, PreviewSettings } from './image-layout';
 import { imageLayout } from './image-layout';
-import { CONVERTED_MARKER, convertedName, isPreviewShape, matchesConverted, matchesPreview, PREVIEW_MARKER, previewName, readableDescription } from './preview-identity';
+import { CONVERTED_MARKER, convertedName, isPreviewShape, matchesConverted, matchesPreview, PREVIEW_MARKER, previewName } from './preview-identity';
 import { parseDispimgFormula } from './dispimg-formula';
 import { WorkbookError } from '../utils/errors';
 import { damagedImageCell } from './legacy-image-cell-metadata';
@@ -128,7 +128,6 @@ export async function renderImages(
         created.push(added);
         shape.name = target.name;
         shape.altTextTitle = permanent ? CONVERTED_MARKER : PREVIEW_MARKER;
-        shape.altTextDescription = readableDescription(permanent ? 'converted' : 'preview', target.mapping.cell.address);
         shape.visible = false;
         shape.load('width,height');
         await context.sync();
@@ -143,7 +142,6 @@ export async function renderImages(
           original: { left: layout.left, top: layout.top, width: layout.width, height: layout.height, placement: 'TwoCell' as const } };
         shape.name = permanent ? convertedName(target.mapping.cell.imageId, target.mapping.cell.address, runId, metadata) :
           previewName(target.mapping.cell.imageId, target.mapping.cell.address, runId, metadata);
-        shape.altTextDescription = readableDescription(permanent ? 'converted' : 'preview', target.mapping.cell.address);
         shape.placement = Excel.Placement.twoCell;
         shape.lockAspectRatio = settings.keepAspectRatio;
         shape.visible = true;

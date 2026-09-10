@@ -1,6 +1,6 @@
 import { cellAddress } from './dispimg-formula';
 
-export interface DamagedImageCell { worksheetName: string; address: string; imageId: string; value: string }
+export interface DamagedImageCell { worksheetName: string; address: string; imageId?: string; value: string; kind: 'json' | 'description' }
 
 /** Recognizes only the exact metadata format emitted by older add-in releases. */
 export function damagedImageCell(value: unknown, address: string): { imageId: string } | undefined {
@@ -12,6 +12,9 @@ export function damagedImageCell(value: unknown, address: string): { imageId: st
     return typeof raw.imageId === 'string' && raw.imageId.startsWith('ID_') && raw.address === address &&
       typeof raw.fitInsideCell === 'boolean' ? { imageId: raw.imageId } : undefined;
   } catch { return undefined; }
+}
+export function damagedImageDescriptionCell(value: unknown, address: string): boolean {
+  return value === `WPS Image Compat converted image for ${address}.` || value === `WPS Image Compat preview for ${address}.`;
 }
 
 /** Read-only scan for cells accidentally replaced by old add-in image metadata. */
@@ -37,7 +40,8 @@ export async function scanDamagedImageCells(): Promise<DamagedImageCell[]> {
           if (batch.formulas[row]?.[column] !== value) continue;
           const address = cellAddress(used.rowIndex + offset + row, used.columnIndex + column);
           const metadata = damagedImageCell(value, address);
-          if (metadata && typeof value === 'string') cells.push({ worksheetName: sheet.name, address, imageId: metadata.imageId, value });
+          if (metadata && typeof value === 'string') cells.push({ worksheetName: sheet.name, address, imageId: metadata.imageId, value, kind: 'json' });
+          else if (damagedImageDescriptionCell(value, address) && typeof value === 'string') cells.push({ worksheetName: sheet.name, address, value, kind: 'description' });
         }
       }
     }

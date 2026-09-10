@@ -43,7 +43,7 @@ test('returns an unavailable result on hosts without picture-shape support', asy
   } finally { restore('Office', oldOffice); }
 });
 
-test('migrates legacy add-in image metadata from visible JSON to readable text', async () => {
+test('migrates legacy add-in image metadata into its name and clears the description', async () => {
   const oldExcel = Object.getOwnPropertyDescriptor(globalThis, 'Excel');
   const oldOffice = Object.getOwnPropertyDescriptor(globalThis, 'Office');
   const shape = {
@@ -64,7 +64,7 @@ test('migrates legacy add-in image metadata from visible JSON to readable text',
   try {
     await normalizeManagedWorksheetImageMetadata();
     assert.ok(shape.name.startsWith('WPSCONVERT_v2.'));
-    assert.equal(shape.altTextDescription, 'WPS Image Compat converted image for B2.');
+    assert.equal(shape.altTextDescription, '');
   } finally {
     restore('Excel', oldExcel);
     restore('Office', oldOffice);

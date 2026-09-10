@@ -1,4 +1,4 @@
-import { CONVERTED_MARKER, convertedName, isConvertedShape, isPreviewShape, PREVIEW_MARKER, previewName, readableDescription, shapeMetadata } from './preview-identity';
+import { CONVERTED_MARKER, convertedName, isConvertedShape, isPreviewShape, PREVIEW_MARKER, previewName, shapeMetadata } from './preview-identity';
 import { WorkbookError } from '../utils/errors';
 
 export interface ManagedWorksheetImage { worksheetName: string; shapeId: string; address: string; kind: 'preview' | 'converted'; zoomed: boolean; }
@@ -23,7 +23,7 @@ export async function listManagedWorksheetImages(): Promise<ManagedWorksheetImag
     }));
   });
 }
-/** Replaces legacy JSON accessibility text on add-in-owned images without changing cells or geometry. */
+/** Moves legacy metadata into the shape name and removes descriptions that macOS Excel may expose as cell text. */
 export async function normalizeManagedWorksheetImageMetadata(): Promise<void> {
   requireShapes();
   await Excel.run(async context => {
@@ -32,13 +32,15 @@ export async function normalizeManagedWorksheetImageMetadata(): Promise<void> {
     await context.sync();
     for (const sheet of sheets.items) for (const shape of sheet.shapes.items) {
       const shapeKind = kind(shape); const metadata = shapeMetadata(shape);
-      if (!shapeKind || !metadata || !shape.altTextDescription.trim().startsWith('{')) continue;
-      const original = metadata.original ?? { left: shape.left, top: shape.top, width: shape.width, height: shape.height,
-        placement: shape.placement === Excel.Placement.absolute ? 'Absolute' as const : 'TwoCell' as const };
-      const next = { ...metadata, original };
-      shape.name = shapeKind === 'preview' ? previewName(metadata.imageId, metadata.address, crypto.randomUUID(), next) :
-        convertedName(metadata.imageId, metadata.address, crypto.randomUUID(), next);
-      shape.altTextDescription = readableDescription(shapeKind, metadata.address);
+      if (!shapeKind || !metadata) continue;
+      if (shape.altTextDescription.trim().startsWith('{')) {
+        const original = metadata.original ?? { left: shape.left, top: shape.top, width: shape.width, height: shape.height,
+          placement: shape.placement === Excel.Placement.absolute ? 'Absolute' as const : 'TwoCell' as const };
+        const next = { ...metadata, original };
+        shape.name = shapeKind === 'preview' ? previewName(metadata.imageId, metadata.address, crypto.randomUUID(), next) :
+          convertedName(metadata.imageId, metadata.address, crypto.randomUUID(), next);
+      }
+      if (shape.altTextDescription) shape.altTextDescription = '';
     }
     await context.sync();
   });
@@ -90,7 +92,6 @@ export async function toggleWorksheetImageZoom(item: ManagedWorksheetImage): Pro
     shape.name = shapeKind === 'preview' ? previewName(metadata.imageId, metadata.address, crypto.randomUUID(), next) :
       convertedName(metadata.imageId, metadata.address, crypto.randomUUID(), next);
     shape.altTextTitle = shapeKind === 'preview' ? PREVIEW_MARKER : CONVERTED_MARKER;
-    shape.altTextDescription = readableDescription(shapeKind, metadata.address);
     await context.sync();
     return next.zoomed;
   });

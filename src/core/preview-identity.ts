@@ -80,4 +80,3 @@ export function matchesConverted(shape: PreviewShapeInfo, imageId: string, addre
   const data = shapeMetadata(shape);
   return isConvertedShape(shape) && data?.imageId === imageId && data.address === address;
 }
-export function readableDescription(kind: 'preview' | 'converted', address: string): string { return kind === 'preview' ? `WPS Image Compat preview for ${address}.` : `WPS Image Compat converted image for ${address}.`; }
