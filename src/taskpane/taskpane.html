@@ -38,6 +38,7 @@
       <button id="scan" data-i18n="scan" disabled>Scan Workbook</button>
       <button id="show" data-i18n="show" disabled>Show Images</button><button id="refresh" data-i18n="refresh" disabled>Refresh Images</button>
       <button id="remove" data-i18n="remove" disabled>Remove Preview Images</button>
+      <button id="view-images" data-i18n="viewImages" disabled>View large images</button>
       <button id="cancel" data-i18n="cancel" disabled>Cancel Scan / Read</button>
       <button id="diagnostics" data-i18n="diagnostics" disabled>Download Diagnostics</button>
     </div>
@@ -58,6 +59,15 @@
     <p class="hint" data-i18n="privacy"></p>
     <p id="scan-status" role="status" aria-live="polite"></p>
     <ul id="results" aria-label="Detected image cells" data-i18n-label="results"></ul>
+    <section id="image-viewer" class="image-viewer" role="dialog" aria-modal="true" aria-labelledby="image-viewer-title" hidden>
+      <div class="image-viewer-dialog"><div class="image-viewer-heading"><h2 id="image-viewer-title" data-i18n="imageViewerTitle">Image viewer</h2>
+        <button id="image-viewer-close" type="button" data-i18n="imageViewerClose">Close</button></div>
+        <p class="hint" data-i18n="imageViewerHint">Double-click an image to toggle its enlarged size.</p>
+        <div id="image-viewer-grid" class="image-viewer-grid"></div>
+        <p id="image-viewer-caption" class="image-viewer-caption"></p>
+        <div class="image-viewer-stage"><img id="image-viewer-image" /></div>
+      </div>
+    </section>
   </main>
   <script type="module" src="./taskpane.ts"></script>
 </body>

@@ -10,6 +10,7 @@ import type { DetectionResult } from '../core/workbook-detector';
 import { showWorkbookImages } from '../core/preview-controller';
 import { canRenderImages, removePreviewImages } from '../core/image-renderer';
 import type { PreviewResult } from '../core/image-renderer';
+import { collectViewableImages, createImageViewer } from './image-viewer';
 import { WorkbookError } from '../utils/errors';
 import { createDiagnosticReport, readHostCapabilities } from '../core/diagnostics';
 import type { HostCapabilities } from '../core/diagnostics';
@@ -48,6 +49,7 @@ let lastOperation = 'initialize';
 let availableUpdate: ReleaseInfo | undefined;
 let statusText: () => string = () => '';
 let hostText = () => t('connecting');
+const imageViewer = createImageViewer();
 function setStatus(key: MessageKey, params?: MessageParams): void {
   statusText = () => t(key, params);
   status.textContent = statusText();
@@ -57,6 +59,7 @@ function updateControls(): void {
   element<HTMLButtonElement>('compatibility-download').disabled = !lastCompatibility || busy;
   element<HTMLButtonElement>('scan').disabled = !ready || busy;
   for (const id of ['show', 'refresh', 'remove']) element<HTMLButtonElement>(id).disabled = !shapesReady || busy;
+  element<HTMLButtonElement>('view-images').disabled = !imageViewer.hasImages() || busy;
   element<HTMLFieldSetElement>('preview-settings').disabled = !shapesReady || busy;
   element<HTMLFieldSetElement>('conversion-settings').disabled = !ready || busy;
   const selectedConversion = element<HTMLInputElement>('convert-dispimg').checked ||
@@ -140,6 +143,7 @@ function applyLanguage(): void {
   element('app-version').textContent = t('currentVersion', { version: __APP_VERSION__ });
   status.textContent = statusText();
   hostStatus.textContent = hostText();
+  imageViewer.setImages(collectViewableImages(lastDetection?.mappings), t('imageViewerOpen'));
   renderResults();
   updateControls();
 }
@@ -150,11 +154,13 @@ function clearResults(): void {
   lastPreview = undefined;
   lastErrorCode = undefined;
   lastErrorMessage = undefined;
+  imageViewer.setImages([], t('imageViewerOpen'));
   for (const id of ['image-count', 'sheet-count', 'parsed-count', 'missing-count', 'error-count']) element(id).textContent = '—';
   renderResults();
 }
 function displayDetection(detection: DetectionResult): void {
   lastDetection = detection;
+  imageViewer.setImages(collectViewableImages(detection.mappings), t('imageViewerOpen'));
   element('image-count').textContent = String(detection.scan.cells.length);
   element('sheet-count').textContent = String(detection.scan.worksheetCount);
   if (detection.mappings) {
@@ -290,6 +296,10 @@ element('remove').addEventListener('click', () => void runAction('remove', async
   setStatus('removing');
   displayPreview(await removePreviewImages());
 }, false));
+element('view-images').addEventListener('click', () => {
+  if (busy || !imageViewer.hasImages()) return;
+  document.querySelector<HTMLButtonElement>('.image-viewer-thumbnail')?.click();
+});
 element('cancel').addEventListener('click', () => {
   if (!busy || !cancelAllowed) return;
   controller?.abort();
