@@ -5,6 +5,8 @@ export interface ManagedWorksheetImage { worksheetName: string; shapeId: string;
 type ShapeKind = ManagedWorksheetImage['kind'];
 function supported(): boolean { return typeof Office !== 'undefined' && Office.context.requirements.isSetSupported('ExcelApi', '1.10'); }
 export function canZoomActiveWorksheetImage(): boolean { return supported() && Office.context.requirements.isSetSupported('ExcelApi', '1.19'); }
+export function canObserveWorksheetImageSelection(): boolean { return supported() && Office.context.requirements.isSetSupported('ExcelApi', '1.9'); }
+const watched = new Set<string>();
 function kind(shape: Pick<Excel.Shape, 'name' | 'altTextTitle'>): ShapeKind | undefined {
   return isPreviewShape(shape) ? 'preview' : isConvertedShape(shape) ? 'converted' : undefined;
 }
@@ -19,6 +21,23 @@ export async function listManagedWorksheetImages(): Promise<ManagedWorksheetImag
       const shapeKind = kind(shape); const metadata = shapeMetadata(shape);
       return shapeKind && metadata ? [{ worksheetName: sheet.name, shapeId: shape.id, address: metadata.address, kind: shapeKind, zoomed: !!metadata.zoomed }] : [];
     }));
+  });
+}
+/** Registers activation handlers only for add-in-owned Shapes. One click is enough to identify the picture. */
+export async function watchManagedWorksheetImages(onActivated: (image: Pick<ManagedWorksheetImage, 'worksheetName' | 'shapeId'>) => void): Promise<void> {
+  if (!canObserveWorksheetImageSelection()) return;
+  await Excel.run(async context => {
+    const sheets = context.workbook.worksheets; sheets.load('items/name'); await context.sync();
+    for (const sheet of sheets.items) sheet.shapes.load('items/id,items/name,items/altTextTitle,items/altTextDescription');
+    await context.sync();
+    for (const sheet of sheets.items) for (const shape of sheet.shapes.items) {
+      if (!kind(shape) || !shapeMetadata(shape)) continue;
+      const key = `${sheet.name}\u0000${shape.id}`;
+      if (watched.has(key)) continue;
+      watched.add(key);
+      shape.onActivated.add(async event => { onActivated({ worksheetName: sheet.name, shapeId: event.shapeId }); });
+    }
+    await context.sync();
   });
 }
 /** Enlarges one owned image over the worksheet, or restores its saved cell-sized geometry. */

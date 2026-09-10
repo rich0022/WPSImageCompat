@@ -11,7 +11,7 @@ import { showWorkbookImages } from '../core/preview-controller';
 import { canRenderImages, removePreviewImages } from '../core/image-renderer';
 import type { PreviewResult } from '../core/image-renderer';
 import { collectViewableImages, createImageViewer } from './image-viewer';
-import { canZoomActiveWorksheetImage, listManagedWorksheetImages, toggleActiveWorksheetImageZoom, toggleWorksheetImageZoom } from '../core/worksheet-image-zoom';
+import { canObserveWorksheetImageSelection, listManagedWorksheetImages, toggleWorksheetImageZoom, watchManagedWorksheetImages } from '../core/worksheet-image-zoom';
 import type { ManagedWorksheetImage } from '../core/worksheet-image-zoom';
 import { WorkbookError } from '../utils/errors';
 import { createDiagnosticReport, readHostCapabilities } from '../core/diagnostics';
@@ -53,6 +53,14 @@ let statusText: () => string = () => '';
 let hostText = () => t('connecting');
 const imageViewer = createImageViewer();
 let managedWorksheetImages: ManagedWorksheetImage[] = [];
+let activatedWorksheetImage: Pick<ManagedWorksheetImage, 'worksheetName' | 'shapeId'> | undefined;
+async function watchWorksheetImages(): Promise<void> {
+  await watchManagedWorksheetImages(active => {
+    activatedWorksheetImage = active;
+    setStatus('worksheetImageSelected');
+    updateControls();
+  });
+}
 function renderManagedWorksheetImages(): void {
   const panel = element('worksheet-image-panel'); const list = element('worksheet-image-list');
   panel.hidden = !managedWorksheetImages.length; list.replaceChildren();
@@ -81,7 +89,7 @@ function updateControls(): void {
   for (const id of ['show', 'refresh', 'remove']) element<HTMLButtonElement>(id).disabled = !shapesReady || busy;
   element<HTMLButtonElement>('view-images').disabled = !imageViewer.hasImages() || busy;
   element<HTMLButtonElement>('manage-worksheet-images').disabled = !ready || busy;
-  element<HTMLButtonElement>('zoom-selected-image').disabled = !canZoomActiveWorksheetImage() || busy;
+  element<HTMLButtonElement>('zoom-selected-image').disabled = !activatedWorksheetImage || busy;
   element<HTMLFieldSetElement>('preview-settings').disabled = !shapesReady || busy;
   element<HTMLFieldSetElement>('conversion-settings').disabled = !ready || busy;
   const selectedConversion = element<HTMLInputElement>('convert-dispimg').checked ||
@@ -128,14 +136,11 @@ function renderResults(): void {
   element('results').replaceChildren();
   if (lastDetection) {
     const { scan, mappings, parsed } = lastDetection;
-    const stateLabels = { found: 'foundStatus', missing: 'missingStatus', error: 'errorStatus', rendered: 'renderedStatus' } as const;
-    for (const [index, cell] of scan.cells.slice(0, 100).entries()) {
-      const item = document.createElement('li');
-      const state = mappings?.[index]?.status;
-      item.textContent = cell.worksheetName + '!' + cell.address + ' · ' + cell.imageId + ' · ' +
-        t(state ? stateLabels[state] : 'uncheckedStatus');
-      element('results').append(item);
-    }
+    const item = document.createElement('li');
+    const found = mappings?.filter(mapping => mapping.status === 'found').length ?? 0;
+    const unresolved = mappings ? mappings.length - found : scan.cells.length;
+    item.textContent = t('imageSummary', { found, unresolved });
+    element('results').append(item);
     for (const issue of (parsed?.issues ?? []).slice(0, 20)) appendIssue(issue.imageId ?? t('workbook'), issue.code, issue.message);
     if (lastDetection.resourceError) appendIssue(t('workbook'), lastDetection.resourceErrorCode ?? 'RESOURCE_READ_FAILED', lastDetection.resourceError);
   }
@@ -179,6 +184,7 @@ function clearResults(): void {
   lastErrorMessage = undefined;
   imageViewer.setImages([], t('imageViewerOpen'));
   managedWorksheetImages = [];
+  activatedWorksheetImage = undefined;
   renderManagedWorksheetImages();
   for (const id of ['image-count', 'sheet-count', 'parsed-count', 'missing-count', 'error-count']) element(id).textContent = '—';
   renderResults();
@@ -201,6 +207,7 @@ function displayPreview(result: PreviewResult): void {
     (result.issues.length ? ' ' + t('issueCount', { count: result.issues.length }) : '') + ' ' + t('preserved');
   status.textContent = statusText();
   renderResults();
+  void watchWorksheetImages().catch(() => { /* Shape activation is optional; the list remains available. */ });
 }
 function displayConversion(result: WorkbookConversionResult): void {
   lastConversion = result;
@@ -249,6 +256,7 @@ if (typeof Office === 'undefined') {
     if (!host.scan) { hostText = () => t('scanUnsupported'); applyLanguage(); return; }
     ready = true;
     shapesReady = canRenderImages();
+    if (canObserveWorksheetImageSelection()) void watchWorksheetImages().catch(() => { /* optional capability */ });
     hostText = () => t('connected', { platform: String(info.platform) }) + (shapesReady ? '' : ' · ' + t('scanOnly'));
     applyLanguage();
   }).catch(() => {
@@ -331,7 +339,10 @@ element('manage-worksheet-images').addEventListener('click', () => void runActio
   setStatus(managedWorksheetImages.length ? 'worksheetImagesReady' : 'worksheetImagesEmpty');
 }, false));
 element('zoom-selected-image').addEventListener('click', () => void runAction('worksheet-image-zoom', async () => {
-  const zoomed = await toggleActiveWorksheetImageZoom();
+  if (!activatedWorksheetImage) return;
+  const image = (await listManagedWorksheetImages()).find(item => item.shapeId === activatedWorksheetImage!.shapeId && item.worksheetName === activatedWorksheetImage!.worksheetName);
+  if (!image) throw new WorkbookError('IMAGE_NOT_FOUND', 'The selected WPS Image Compat picture is no longer available.');
+  const zoomed = await toggleWorksheetImageZoom(image);
   setStatus(zoomed ? 'worksheetImageZoomed' : 'worksheetImageRestored');
 }, false));
 element('cancel').addEventListener('click', () => {
