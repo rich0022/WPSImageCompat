@@ -7,74 +7,84 @@
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 </head>
 <body>
-  <main>
-    <header><span class="badge" data-i18n="badge">Image preview</span><h1>WPS Image Compat</h1>
-      <p data-i18n="intro">Preview WPS cell images in Excel while keeping your formulas.</p></header>
-    <div class="language-row"><label for="language" data-i18n="language">Language</label>
-      <select id="language"><option value="auto" data-i18n="auto">Follow Excel</option><option value="zh-CN">简体中文</option><option value="en">English</option></select>
-    </div>
-    <p id="app-version" class="hint"></p>
-    <section id="update-panel" hidden>
+  <main class="app-shell">
+    <header class="app-header">
+      <div><span class="badge" data-i18n="badge">Compatibility &amp; images</span><h1>WPS Image Compat</h1>
+        <p class="intro" data-i18n="intro">Check compatibility and preview WPS cell images while keeping your formulas.</p></div>
+      <label class="enable-control" for="addin-enabled"><span data-i18n="addinEnabled">Enable WPS Image Compat</span><input id="addin-enabled" type="checkbox" checked /></label>
+    </header>
+    <section class="host-card" aria-label="Excel connection">
+      <p id="host-status" role="status">Connecting to Excel…</p>
+      <div class="host-controls"><label for="language" data-i18n="language">Language</label>
+        <select id="language"><option value="auto" data-i18n="auto">Follow Excel</option><option value="zh-CN">简体中文</option><option value="en">English</option></select>
+      </div>
+      <p id="app-version"></p>
+    </section>
+    <p id="addin-paused-hint" class="hint" data-i18n="addinPausedHint" hidden>Paused. Existing images and cells are unchanged.</p>
+    <section id="update-panel" class="update-card" hidden>
       <p id="update-status" role="status" aria-live="polite"></p>
-      <button id="apply-update" data-i18n="updateAction" disabled>Update task pane</button>
+      <button id="apply-update" class="secondary-action" data-i18n="updateAction" disabled>Update task pane</button>
       <p class="hint" data-i18n="updateHint">Reloads this pane and clears its scan results. Existing worksheet previews stay in place.</p>
     </section>
-    <p id="host-status" role="status">Connecting to Excel…</p>
-    <div class="language-row">
-      <label for="addin-enabled" data-i18n="addinEnabled">Enable WPS Image Compat</label>
-      <input id="addin-enabled" type="checkbox" checked />
-    </div>
-    <p id="addin-paused-hint" class="hint" data-i18n="addinPausedHint" hidden>Paused. Existing images and cells are unchanged.</p>
-    <details class="work-section" aria-labelledby="compatibility-title">
-      <summary id="compatibility-title" data-i18n="compatTitle">Compatibility check</summary>
-      <p class="hint" data-i18n="compatIntro"></p>
-      <div class="actions"><button id="compatibility" data-i18n="compatCheck" disabled>Check Compatibility</button>
-        <button id="compatibility-download" data-i18n="compatDownload" aria-describedby="compatibility-privacy" disabled>Download Detailed Report</button></div>
-      <p id="compatibility-privacy" class="hint" data-i18n="compatPrivacy"></p>
-      <div id="compatibility-results"></div>
-    </details>
-    <details class="work-section" open aria-label="Scan results" data-i18n-label="summary">
-      <summary data-i18n="imageToolsTitle">Restore WPS images</summary>
-      <section class="summary">
-      <h2><span data-i18n="detected">Detected:</span> <strong id="image-count">—</strong> <span data-i18n="images">WPS images</span></h2>
-      <dl><div><dt data-i18n="sheets">Worksheets with images</dt><dd id="sheet-count">—</dd></div>
+    <section class="workflow-card" aria-labelledby="image-workflow-title">
+      <div class="section-heading"><div><h2 id="image-workflow-title" data-i18n="imageToolsTitle">Restore WPS images</h2>
+        <p data-i18n="hint">Scan reads only. Show and Refresh add floating PNG/JPEG previews.</p></div></div>
+      <button id="scan" class="primary-action" data-i18n="scan" disabled>Scan Workbook</button>
+      <div class="action-grid">
+        <button id="repair-selected-image" class="secondary-action" data-i18n="repairSelectedImage" disabled>Repair selected code cell</button>
+        <button id="repair-damaged-images" class="secondary-action" data-i18n="repairDamagedImages" disabled>Repair metadata code cells</button>
+        <button id="show" class="subtle-action" data-i18n="show" disabled>Show Images</button>
+        <button id="refresh" class="subtle-action" data-i18n="refresh" disabled>Refresh Images</button>
+        <button id="toggle-selected-image" class="subtle-action wide" data-i18n="zoomSelectedImage" disabled>Enlarge selected image</button>
+        <button id="remove" class="danger-action wide" data-i18n="remove" disabled>Remove Preview Images</button>
+      </div>
+      <button id="cancel" class="subtle-action cancel-action" data-i18n="cancel" disabled>Cancel Scan / Read</button>
+    </section>
+    <section class="metric-card" aria-label="Scan results" data-i18n-label="summary">
+      <header><h2><span data-i18n="detected">Detected:</span> <strong id="image-count">—</strong> <span data-i18n="images">WPS images</span></h2><p data-i18n="summary">Scan results</p></header>
+      <dl class="metric-grid"><div><dt data-i18n="sheets">Worksheets with images</dt><dd id="sheet-count">—</dd></div>
         <div><dt data-i18n="excelImages">Excel image shapes</dt><dd id="excel-image-count">—</dd></div>
         <div><dt data-i18n="parsed">Resources parsed</dt><dd id="parsed-count">—</dd></div>
-        <div><dt data-i18n="missing">Missing resources</dt><dd id="missing-count">—</dd></div><div><dt data-i18n="errors">Resource errors</dt><dd id="error-count">—</dd></div></dl>
-      </section>
-    <div class="actions">
-      <button id="scan" data-i18n="scan" disabled>Scan Workbook</button>
-      <button id="show" data-i18n="show" disabled>Show Images</button><button id="refresh" data-i18n="refresh" disabled>Refresh Images</button>
-      <button id="remove" data-i18n="remove" disabled>Remove Preview Images</button>
-      <button id="repair-damaged-images" data-i18n="repairDamagedImages" disabled>Repair metadata code cells</button>
-      <button id="repair-selected-image" data-i18n="repairSelectedImage" disabled>Repair selected code cell</button>
-      <button id="toggle-selected-image" data-i18n="zoomSelectedImage" disabled>Enlarge selected image</button>
-      <button id="cancel" data-i18n="cancel" disabled>Cancel Scan / Read</button>
-    </div>
-    <fieldset id="preview-settings" disabled><legend data-i18n="settings">Preview settings</legend>
-      <label><input id="keep-aspect-ratio" type="checkbox" checked /> <span data-i18n="aspect">Keep aspect ratio</span></label>
-      <label><input id="fit-inside-cell" type="checkbox" checked /> <span data-i18n="fit">Fit image inside cell</span></label>
-      <label><input id="preserve-formula" type="checkbox" checked disabled /> <span data-i18n="preserve">Preserve original DISPIMG formula (always)</span></label>
-      <label><input id="auto-toggle-worksheet-image" type="checkbox" /> <span data-i18n="worksheetImageAutoToggle">Automatically enlarge or restore a selected plugin image in the worksheet</span></label>
-    </fieldset>
+        <div><dt data-i18n="missing">Missing resources</dt><dd id="missing-count">—</dd></div>
+        <div><dt data-i18n="errors">Resource errors</dt><dd id="error-count">—</dd></div></dl>
+    </section>
+    <details class="advanced-section">
+      <summary data-i18n="settings">Preview settings</summary>
+      <div class="advanced-content"><fieldset id="preview-settings" disabled>
+        <label><input id="keep-aspect-ratio" type="checkbox" checked /> <span data-i18n="aspect">Keep aspect ratio</span></label>
+        <label><input id="fit-inside-cell" type="checkbox" checked /> <span data-i18n="fit">Fit image inside cell</span></label>
+        <label><input id="preserve-formula" type="checkbox" checked disabled /> <span data-i18n="preserve">Preserve original DISPIMG formula (always)</span></label>
+        <label><input id="auto-toggle-worksheet-image" type="checkbox" /> <span data-i18n="worksheetImageAutoToggle">Automatically enlarge or restore a selected plugin image in the worksheet</span></label>
+      </fieldset></div>
     </details>
-    <details class="work-section"><summary data-i18n="conversionSettings">Conversion settings</summary>
-    <fieldset id="conversion-settings" disabled>
-      <label><input id="convert-dispimg" type="checkbox" checked /> <span data-i18n="convertDispimg">Convert DISPIMG to permanent Excel images</span></label>
-      <label><input id="freeze-unsupported" type="checkbox" /> <span data-i18n="freezeUnsupported">Replace supported current results of unsupported formulas with values</span></label>
-      <label><input id="freeze-external" type="checkbox" /> <span data-i18n="freezeExternal">Replace supported current results of external-reference formulas with values</span></label>
-      <label><input id="conversion-confirm" type="checkbox" /> <span data-i18n="conversionConfirm">I understand this changes the current workbook. I have saved a copy.</span></label>
-      <button id="convert" data-i18n="convert" aria-describedby="conversion-note" disabled>Convert Workbook</button>
-    </fieldset>
+    <details class="advanced-section">
+      <summary data-i18n="conversionSettings">Conversion settings</summary>
+      <div class="advanced-content"><p id="conversion-note" class="hint" data-i18n="conversion"></p><fieldset id="conversion-settings" disabled>
+        <label><input id="convert-dispimg" type="checkbox" checked /> <span data-i18n="convertDispimg">Convert DISPIMG to permanent Excel images</span></label>
+        <label><input id="freeze-unsupported" type="checkbox" /> <span data-i18n="freezeUnsupported">Replace supported current results of unsupported formulas with values</span></label>
+        <label><input id="freeze-external" type="checkbox" /> <span data-i18n="freezeExternal">Replace supported current results of external-reference formulas with values</span></label>
+        <label><input id="conversion-confirm" type="checkbox" /> <span data-i18n="conversionConfirm">I understand this changes the current workbook. I have saved a copy.</span></label>
+        <button id="convert" class="primary-action conversion-action" data-i18n="convert" aria-describedby="conversion-note" disabled>Convert Workbook</button>
+      </fieldset></div>
     </details>
-    <details class="work-section"><summary data-i18n="moreToolsTitle">Reports and support</summary>
-      <div class="actions"><button id="diagnostics" data-i18n="diagnostics" disabled>Download Diagnostics</button></div>
-      <p class="hint" data-i18n="privacy"></p>
+    <details class="advanced-section">
+      <summary id="compatibility-title" data-i18n="compatTitle">Compatibility check</summary>
+      <div class="advanced-content"><p class="hint" data-i18n="compatIntro"></p>
+        <div class="compatibility-actions"><button id="compatibility" class="primary-action" data-i18n="compatCheck" disabled>Check Compatibility</button>
+          <button id="compatibility-download" class="subtle-action" data-i18n="compatDownload" aria-describedby="compatibility-privacy" disabled>Download Detailed Report</button></div>
+        <p id="compatibility-privacy" class="hint" data-i18n="compatPrivacy"></p><div id="compatibility-results"></div>
+      </div>
     </details>
-    <p class="hint" data-i18n="hint"></p>
-    <p id="conversion-note" class="hint" data-i18n="conversion"></p>
-    <p id="scan-status" role="status" aria-live="polite"></p>
-    <ul id="results" aria-label="Detected image cells" data-i18n-label="results"></ul>
+    <details class="advanced-section">
+      <summary data-i18n="moreToolsTitle">Reports and support</summary>
+      <div class="advanced-content"><button id="diagnostics" class="subtle-action" data-i18n="diagnostics" disabled>Download Diagnostics</button>
+        <p class="hint" data-i18n="privacy"></p></div>
+    </details>
+    <section class="activity-card" aria-label="Operation status">
+      <p id="scan-status" role="status" aria-live="polite"></p>
+      <ul id="results" aria-label="Detected image cells" data-i18n-label="results"></ul>
+    </section>
+    <p class="compact-note" data-i18n="hint">Scan reads only. Show and Refresh add floating PNG/JPEG previews.</p>
   </main>
   <script type="module" src="./taskpane.ts"></script>
 </body>
