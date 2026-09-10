@@ -5,6 +5,7 @@ dist/
 .env*
 !.env.example
 .wrangler/
+worker-configuration.d.ts
 .dev.vars*
 *.xlsx
 *.xls
