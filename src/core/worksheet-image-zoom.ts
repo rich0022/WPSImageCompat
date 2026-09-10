@@ -44,7 +44,10 @@ export async function normalizeManagedWorksheetImageMetadata(): Promise<void> {
   });
 }
 /** Registers activation handlers only for add-in-owned Shapes. One click is enough to identify the picture. */
-export async function watchManagedWorksheetImages(onActivated: (image: Pick<ManagedWorksheetImage, 'worksheetName' | 'shapeId'>) => void): Promise<void> {
+export async function watchManagedWorksheetImages(
+  onActivated: (image: Pick<ManagedWorksheetImage, 'worksheetName' | 'shapeId'>) => void,
+  onDeactivated?: (image: Pick<ManagedWorksheetImage, 'worksheetName' | 'shapeId'>) => void,
+): Promise<void> {
   if (!canObserveWorksheetImageSelection()) return;
   await Excel.run(async context => {
     const sheets = context.workbook.worksheets; sheets.load('items/name'); await context.sync();
@@ -56,6 +59,7 @@ export async function watchManagedWorksheetImages(onActivated: (image: Pick<Mana
       if (watched.has(key)) continue;
       watched.add(key);
       shape.onActivated.add(async event => { onActivated({ worksheetName: sheet.name, shapeId: event.shapeId }); });
+      if (onDeactivated) shape.onDeactivated.add(async event => { onDeactivated({ worksheetName: sheet.name, shapeId: event.shapeId }); });
     }
     await context.sync();
   });

@@ -13,6 +13,7 @@ import type { PreviewResult } from '../core/image-renderer';
 import { scanExcelImages } from '../core/excel-image-scanner';
 import type { ExcelImageScanResult } from '../core/excel-image-scanner';
 import { canObserveWorksheetImageSelection, listManagedWorksheetImages, normalizeManagedWorksheetImageMetadata, toggleWorksheetImageZoom, watchManagedWorksheetImages } from '../core/worksheet-image-zoom';
+import type { ManagedWorksheetImage } from '../core/worksheet-image-zoom';
 import { WorkbookError } from '../utils/errors';
 import { createDiagnosticReport, readHostCapabilities } from '../core/diagnostics';
 import type { HostCapabilities } from '../core/diagnostics';
@@ -29,6 +30,7 @@ const element = <T extends HTMLElement>(id: string): T => {
 const status = element('scan-status');
 const hostStatus = element('host-status');
 const languageSelect = element<HTMLSelectElement>('language');
+const autoToggleWorksheetImage = element<HTMLInputElement>('auto-toggle-worksheet-image');
 const languageKey = 'wps-image-compat.language';
 let preference: LanguagePreference = 'auto';
 try { preference = languagePreference(localStorage.getItem(languageKey)); } catch { /* Restricted storage: use this session. */ }
@@ -53,24 +55,37 @@ let availableUpdate: ReleaseInfo | undefined;
 let statusText: () => string = () => '';
 let hostText = () => t('connecting');
 const worksheetImageToggles = new Set<string>();
-/** Keeps image enlargement inside the worksheet; no task-pane controls are required. */
+let activatedWorksheetImage: ManagedWorksheetImage | undefined;
+/** Watches worksheet selection so the optional automatic behavior and manual control use the same image. */
 async function enableWorksheetImageInteraction(): Promise<void> {
   if (!canObserveWorksheetImageSelection()) return;
   await watchManagedWorksheetImages(active => {
     const key = `${active.worksheetName}\u0000${active.shapeId}`;
-    if (busy || worksheetImageToggles.has(key)) return;
-    worksheetImageToggles.add(key);
     void (async () => {
+      let toggling = false;
       try {
         const image = (await listManagedWorksheetImages()).find(item =>
           item.worksheetName === active.worksheetName && item.shapeId === active.shapeId);
         if (!image) return;
+        activatedWorksheetImage = image;
+        updateControls();
+        setStatus('worksheetImageSelected');
+        if (!autoToggleWorksheetImage.checked || busy || worksheetImageToggles.has(key)) return;
+        worksheetImageToggles.add(key);
+        toggling = true;
         const zoomed = await toggleWorksheetImageZoom(image);
+        activatedWorksheetImage = { ...image, zoomed };
+        updateControls();
         setStatus(zoomed ? 'worksheetImageZoomed' : 'worksheetImageRestored');
       } catch {
         // An image may have been removed or a sheet protected after it was selected.
-      } finally { worksheetImageToggles.delete(key); }
+      } finally { if (toggling) worksheetImageToggles.delete(key); }
     })();
+  }, deactivated => {
+    if (activatedWorksheetImage?.worksheetName === deactivated.worksheetName && activatedWorksheetImage.shapeId === deactivated.shapeId) {
+      activatedWorksheetImage = undefined;
+      updateControls();
+    }
   });
 }
 function setStatus(key: MessageKey, params?: MessageParams): void {
@@ -82,6 +97,9 @@ function updateControls(): void {
   element<HTMLButtonElement>('compatibility-download').disabled = !lastCompatibility || busy;
   element<HTMLButtonElement>('scan').disabled = !ready || busy;
   for (const id of ['show', 'refresh', 'remove']) element<HTMLButtonElement>(id).disabled = !shapesReady || busy;
+  const toggleSelected = element<HTMLButtonElement>('toggle-selected-image');
+  toggleSelected.disabled = !activatedWorksheetImage || busy;
+  toggleSelected.textContent = t(activatedWorksheetImage?.zoomed ? 'restoreSelectedImage' : 'zoomSelectedImage');
   element<HTMLFieldSetElement>('preview-settings').disabled = !shapesReady || busy;
   element<HTMLFieldSetElement>('conversion-settings').disabled = !ready || busy;
   const selectedConversion = element<HTMLInputElement>('convert-dispimg').checked ||
@@ -175,6 +193,7 @@ function clearResults(): void {
   lastConversion = undefined;
   lastDetection = undefined;
   lastExcelImages = undefined;
+  activatedWorksheetImage = undefined;
   lastPreview = undefined;
   lastErrorCode = undefined;
   lastErrorMessage = undefined;
@@ -285,6 +304,7 @@ element('compatibility-download').addEventListener('click', () => {
 for (const id of ['convert-dispimg', 'freeze-unsupported', 'freeze-external', 'conversion-confirm']) {
   element<HTMLInputElement>(id).addEventListener('change', updateControls);
 }
+autoToggleWorksheetImage.addEventListener('change', updateControls);
 element('convert').addEventListener('click', () => void runAction('convert', async () => {
   const result = await convertWorkbook({
     convertDispimg: element<HTMLInputElement>('convert-dispimg').checked,
@@ -332,6 +352,18 @@ element('remove').addEventListener('click', () => void runAction('remove', async
   setStatus('removing');
   displayPreview(await removePreviewImages());
 }, false));
+element('toggle-selected-image').addEventListener('click', () => {
+  const selected = activatedWorksheetImage;
+  if (!selected) return;
+  void runAction('worksheet-image-zoom', async () => {
+    const image = (await listManagedWorksheetImages()).find(item =>
+      item.worksheetName === selected.worksheetName && item.shapeId === selected.shapeId);
+    if (!image) throw new WorkbookError('IMAGE_NOT_FOUND', 'The selected WPS Image Compat picture is no longer available.');
+    const zoomed = await toggleWorksheetImageZoom(image);
+    activatedWorksheetImage = { ...image, zoomed };
+    setStatus(zoomed ? 'worksheetImageZoomed' : 'worksheetImageRestored');
+  }, false, true);
+});
 element('cancel').addEventListener('click', () => {
   if (!busy || !cancelAllowed) return;
   controller?.abort();
