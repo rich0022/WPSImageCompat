@@ -10,6 +10,7 @@ import type { DetectionResult } from '../core/workbook-detector';
 import { showWorkbookImages } from '../core/preview-controller';
 import { canRenderImages, removePreviewImages } from '../core/image-renderer';
 import type { PreviewResult } from '../core/image-renderer';
+import { recoverDamagedImageCells } from '../core/damaged-image-recovery';
 import { scanExcelImages } from '../core/excel-image-scanner';
 import type { ExcelImageScanResult } from '../core/excel-image-scanner';
 import { canObserveWorksheetImageSelection, listManagedWorksheetImages, normalizeManagedWorksheetImageMetadata, toggleWorksheetImageZoom, watchManagedWorksheetImages } from '../core/worksheet-image-zoom';
@@ -97,6 +98,7 @@ function updateControls(): void {
   element<HTMLButtonElement>('compatibility-download').disabled = !lastCompatibility || busy;
   element<HTMLButtonElement>('scan').disabled = !ready || busy;
   for (const id of ['show', 'refresh', 'remove']) element<HTMLButtonElement>(id).disabled = !shapesReady || busy;
+  element<HTMLButtonElement>('repair-damaged-images').disabled = !shapesReady || busy;
   const toggleSelected = element<HTMLButtonElement>('toggle-selected-image');
   toggleSelected.disabled = !activatedWorksheetImage || busy;
   toggleSelected.textContent = t(activatedWorksheetImage?.zoomed ? 'restoreSelectedImage' : 'zoomSelectedImage');
@@ -351,6 +353,16 @@ for (const mode of ['show', 'refresh'] as const) {
 element('remove').addEventListener('click', () => void runAction('remove', async () => {
   setStatus('removing');
   displayPreview(await removePreviewImages());
+}, false));
+element('repair-damaged-images').addEventListener('click', () => void runAction('repair-damaged-images', async () => {
+  setStatus('reading');
+  const recovered = await recoverDamagedImageCells({
+    keepAspectRatio: element<HTMLInputElement>('keep-aspect-ratio').checked,
+    fitInsideCell: element<HTMLInputElement>('fit-inside-cell').checked,
+  });
+  displayPreview(recovered.preview);
+  statusText = () => t('repairComplete', { restored: recovered.restored, cleared: recovered.cleared });
+  status.textContent = statusText();
 }, false));
 element('toggle-selected-image').addEventListener('click', () => {
   const selected = activatedWorksheetImage;

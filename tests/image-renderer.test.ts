@@ -119,6 +119,18 @@ test('conversion creates a permanent shape, replaces only its preview, and can r
     assert.equal((await removePreviewImages()).removed, 0);
   });
 });
+test('recovery renders a permanent image for a verified legacy metadata cell', async () => {
+  const sheet = makeSheet();
+  const legacy = JSON.stringify({ imageId: 'ID_A', address: 'A1', fitInsideCell: true, offsetLeft: 0, offsetTop: 0 });
+  sheet.cells.get('A1')!.formulas = [[legacy]];
+  sheet.cells.get('A1')!.values = [[legacy]];
+  await withExcel([sheet], async () => {
+    const result = await renderImages([mapping()], DEFAULT_PREVIEW_SETTINGS, 'recover');
+    assert.equal(result.inserted, 1);
+    assert.equal(result.renderedCells?.[0]?.address, 'A1');
+    assert.equal(sheet.shapes[0]!.altTextTitle, CONVERTED_MARKER);
+  });
+});
 test('repeated IDs across cells/sheets remain separate and deduplicate after row movement', async () => {
   const first = makeSheet(), second = makeSheet('Hidden sheet');
   first.cells.set('A2', first.makeCell('ID_A', 50));
