@@ -339,13 +339,16 @@ element('manage-worksheet-images').addEventListener('click', () => void runActio
   renderManagedWorksheetImages();
   setStatus(managedWorksheetImages.length ? 'worksheetImagesReady' : 'worksheetImagesEmpty');
 }, false));
-element('zoom-selected-image').addEventListener('click', () => void runAction('worksheet-image-zoom', async () => {
-  if (!activatedWorksheetImage) return;
-  const image = (await listManagedWorksheetImages()).find(item => item.shapeId === activatedWorksheetImage!.shapeId && item.worksheetName === activatedWorksheetImage!.worksheetName);
+element('zoom-selected-image').addEventListener('click', () => {
+  const selected = activatedWorksheetImage;
+  if (!selected) return;
+  void runAction('worksheet-image-zoom', async () => {
+  const image = (await listManagedWorksheetImages()).find(item => item.shapeId === selected.shapeId && item.worksheetName === selected.worksheetName);
   if (!image) throw new WorkbookError('IMAGE_NOT_FOUND', 'The selected WPS Image Compat picture is no longer available.');
   const zoomed = await toggleWorksheetImageZoom(image);
   setStatus(zoomed ? 'worksheetImageZoomed' : 'worksheetImageRestored');
-}, false));
+  }, false);
+});
 element('cancel').addEventListener('click', () => {
   if (!busy || !cancelAllowed) return;
   controller?.abort();

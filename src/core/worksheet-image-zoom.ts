@@ -57,7 +57,7 @@ export async function toggleWorksheetImageZoom(item: ManagedWorksheetImage): Pro
       shape.lockAspectRatio = false; shape.width = original.width; shape.height = original.height; shape.left = original.left; shape.top = original.top;
       shape.placement = original.placement === 'Absolute' ? Excel.Placement.absolute : Excel.Placement.twoCell;
     } else {
-      const scale = Math.max(2, Math.min(4, Math.max(360 / Math.max(shape.width, 1), 260 / Math.max(shape.height, 1))));
+      const scale = Math.max(4, Math.min(8, Math.max(720 / Math.max(shape.width, 1), 520 / Math.max(shape.height, 1))));
       const width = shape.width * scale, height = shape.height * scale;
       shape.placement = Excel.Placement.absolute; shape.lockAspectRatio = false; shape.width = width; shape.height = height;
       shape.left = Math.max(0, shape.left - (width - original.width) / 2); shape.top = Math.max(0, shape.top - (height - original.height) / 2);
