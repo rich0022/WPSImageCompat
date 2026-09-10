@@ -33,6 +33,7 @@
       <section class="summary">
       <h2><span data-i18n="detected">Detected:</span> <strong id="image-count">—</strong> <span data-i18n="images">WPS images</span></h2>
       <dl><div><dt data-i18n="sheets">Worksheets with images</dt><dd id="sheet-count">—</dd></div>
+        <div><dt data-i18n="excelImages">Excel image shapes</dt><dd id="excel-image-count">—</dd></div>
         <div><dt data-i18n="parsed">Resources parsed</dt><dd id="parsed-count">—</dd></div>
         <div><dt data-i18n="missing">Missing resources</dt><dd id="missing-count">—</dd></div><div><dt data-i18n="errors">Resource errors</dt><dd id="error-count">—</dd></div></dl>
       </section>
@@ -40,9 +41,6 @@
       <button id="scan" data-i18n="scan" disabled>Scan Workbook</button>
       <button id="show" data-i18n="show" disabled>Show Images</button><button id="refresh" data-i18n="refresh" disabled>Refresh Images</button>
       <button id="remove" data-i18n="remove" disabled>Remove Preview Images</button>
-      <button id="view-images" data-i18n="viewImages" disabled>View large images</button>
-      <button id="zoom-selected-image" data-i18n="zoomSelectedImage" disabled>Enlarge selected image</button>
-      <button id="manage-worksheet-images" data-i18n="manageWorksheetImages" disabled>Enlarge worksheet image</button>
       <button id="cancel" data-i18n="cancel" disabled>Cancel Scan / Read</button>
     </div>
     <fieldset id="preview-settings" disabled><legend data-i18n="settings">Preview settings</legend>
@@ -68,19 +66,6 @@
     <p id="conversion-note" class="hint" data-i18n="conversion"></p>
     <p id="scan-status" role="status" aria-live="polite"></p>
     <ul id="results" aria-label="Detected image cells" data-i18n-label="results"></ul>
-    <section id="worksheet-image-panel" class="summary" hidden><h2 data-i18n="worksheetImageTitle">Worksheet images</h2>
-      <p class="hint" data-i18n="worksheetImageHint">Choose a plugin image to enlarge it over the worksheet; choose again to restore it.</p>
-      <ul id="worksheet-image-list"></ul>
-    </section>
-    <section id="image-viewer" class="image-viewer" role="dialog" aria-modal="true" aria-labelledby="image-viewer-title" hidden>
-      <div class="image-viewer-dialog"><div class="image-viewer-heading"><h2 id="image-viewer-title" data-i18n="imageViewerTitle">Image viewer</h2>
-        <button id="image-viewer-close" type="button" data-i18n="imageViewerClose">Close</button></div>
-        <p class="hint" data-i18n="imageViewerHint">Double-click an image to toggle its enlarged size.</p>
-        <div id="image-viewer-grid" class="image-viewer-grid"></div>
-        <p id="image-viewer-caption" class="image-viewer-caption"></p>
-        <div class="image-viewer-stage"><img id="image-viewer-image" /></div>
-      </div>
-    </section>
   </main>
   <script type="module" src="./taskpane.ts"></script>
 </body>
