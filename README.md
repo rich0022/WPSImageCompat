@@ -20,7 +20,7 @@ npm run dev
 
 ### 线上团队版安装（推荐）
 
-访问 [生产安装页](https://wpsimagecompat.fogce.workers.dev/) 下载生产清单，或直接下载 [manifest.xml](https://wpsimagecompat.fogce.workers.dev/manifest.xml)。生产清单中的任务窗格、图标、帮助页和版本信息均指向 `wpsimagecompat.fogce.workers.dev`，不需要 Node.js、本地开发服务或开发证书。
+访问 [生产安装页](https://wpsimagecompat.fogce.workers.dev/) 下载生产清单，或直接下载 [manifest.xml](https://wpsimagecompat.fogce.workers.dev/manifest.xml?version=1.5.1.0)。生产清单中的任务窗格、图标、帮助页和版本信息均指向 `wpsimagecompat.fogce.workers.dev`，不需要 Node.js、本地开发服务或开发证书。
 
 macOS 上将下载文件替换为 `~/Library/Containers/com.microsoft.Excel/Data/Documents/wef/wps-image-compat.xml`，然后完全退出并重启 Excel。Windows 测试环境从共享加载项目录安装同一份生产清单；组织内多人使用时，由 Microsoft 365 管理员通过集中部署分发该生产清单。每位使用者都必须完成一次安装；Cloudflare 只能更新已经使用线上 URL 的任务窗格，不能远程替换用户本机的侧载清单。
 
