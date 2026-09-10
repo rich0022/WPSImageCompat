@@ -24,8 +24,7 @@ async function clearRecoveredCells(cells: DamagedImageCell[]): Promise<number> {
       range.load('formulas,values');
       await context.sync();
       const value = range.values[0]?.[0];
-      if (range.formulas[0]?.[0] !== value ||
-          (!damagedImageCell(value, cell.address)?.imageId && !damagedImageDescriptionCell(value, cell.address))) continue;
+      if (!damagedImageCell(value, cell.address)?.imageId && !damagedImageDescriptionCell(value, cell.address)) continue;
       range.clear(Excel.ClearApplyTo.contents);
       await context.sync();
       cleared++;
