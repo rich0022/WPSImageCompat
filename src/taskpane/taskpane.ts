@@ -13,6 +13,8 @@ import type { PreviewResult } from '../core/image-renderer';
 import { recoverDamagedImageCells, recoverSelectedDamagedImageCell } from '../core/damaged-image-recovery';
 import { scanExcelImages } from '../core/excel-image-scanner';
 import type { ExcelImageScanResult } from '../core/excel-image-scanner';
+import { inspectExcelEmbeddedImages } from '../core/excel-embedded-image-inspector';
+import type { ExcelEmbeddedImageParseResult } from '../core/excel-drawing-parser';
 import { canObserveWorksheetImageSelection, listManagedWorksheetImages, normalizeManagedWorksheetImageMetadata, toggleWorksheetImageZoom, watchManagedWorksheetImages } from '../core/worksheet-image-zoom';
 import type { ManagedWorksheetImage } from '../core/worksheet-image-zoom';
 import { WorkbookError } from '../utils/errors';
@@ -54,6 +56,7 @@ let lastCompatibility: CompatibilityReport | undefined;
 let lastConversion: WorkbookConversionResult | undefined;
 let lastDetection: DetectionResult | undefined;
 let lastExcelImages: ExcelImageScanResult | undefined;
+let lastEmbeddedExcelImages: ExcelEmbeddedImageParseResult | undefined;
 let lastPreview: PreviewResult | undefined;
 let lastErrorCode: string | undefined;
 let lastErrorMessage: string | undefined;
@@ -106,6 +109,7 @@ function updateControls(): void {
   element<HTMLButtonElement>('compatibility').disabled = !ready || unavailable;
   element<HTMLButtonElement>('compatibility-download').disabled = !featuresEnabled || !lastCompatibility || busy;
   element<HTMLButtonElement>('scan').disabled = !ready || unavailable;
+  element<HTMLButtonElement>('inspect-excel-images').disabled = !ready || unavailable;
   for (const id of ['show', 'refresh', 'remove']) element<HTMLButtonElement>(id).disabled = !shapesReady || unavailable;
   element<HTMLButtonElement>('repair-damaged-images').disabled = !shapesReady || unavailable;
   element<HTMLButtonElement>('repair-selected-image').disabled = !shapesReady || unavailable;
@@ -172,6 +176,13 @@ function renderResults(): void {
     item.textContent = t('excelImageSummary', { images: lastExcelImages.imageCount, sheets: lastExcelImages.worksheetCount });
     element('results').append(item);
   }
+  if (lastEmbeddedExcelImages) {
+    const sheets = new Set(lastEmbeddedExcelImages.images.map(image => image.worksheetName)).size;
+    const item = document.createElement('li');
+    item.textContent = t('excelEmbeddedSummary', { images: lastEmbeddedExcelImages.images.length, sheets });
+    element('results').append(item);
+    for (const issue of lastEmbeddedExcelImages.issues.slice(0, 20)) appendIssue(issue.location ?? t('workbook'), issue.code, issue.message);
+  }
   for (const issue of (lastPreview?.issues ?? []).slice(0, 20)) {
     appendIssue(issue.location, issue.code ?? 'OPERATION_FAILED', issue.message);
   }
@@ -206,11 +217,12 @@ function clearResults(): void {
   lastConversion = undefined;
   lastDetection = undefined;
   lastExcelImages = undefined;
+  lastEmbeddedExcelImages = undefined;
   activatedWorksheetImage = undefined;
   lastPreview = undefined;
   lastErrorCode = undefined;
   lastErrorMessage = undefined;
-  for (const id of ['image-count', 'sheet-count', 'excel-image-count', 'parsed-count', 'missing-count', 'error-count']) element(id).textContent = '—';
+  for (const id of ['image-count', 'sheet-count', 'excel-image-count', 'excel-embedded-count', 'parsed-count', 'missing-count', 'error-count']) element(id).textContent = '—';
   renderResults();
 }
 function displayDetection(detection: DetectionResult): void {
@@ -227,6 +239,11 @@ function displayDetection(detection: DetectionResult): void {
 function displayExcelImages(result: ExcelImageScanResult): void {
   lastExcelImages = result;
   element('excel-image-count').textContent = result.supported ? String(result.imageCount) : '—';
+  renderResults();
+}
+function displayEmbeddedExcelImages(result: ExcelEmbeddedImageParseResult): void {
+  lastEmbeddedExcelImages = result;
+  element('excel-embedded-count').textContent = String(result.images.length);
   renderResults();
 }
 function displayPreview(result: PreviewResult): void {
@@ -358,6 +375,12 @@ element('scan').addEventListener('click', () => void runAction('scan', async sig
     (detection.resourceError ? ' ' + t('notChecked') + ' ' + errorText(locale, detection.resourceErrorCode ?? 'RESOURCE_READ_FAILED', detection.resourceError) : '') +
     (detection.parsed && !detection.parsed.hasCellImages ? ' ' + t('noParts') : '');
   status.textContent = statusText();
+}));
+element('inspect-excel-images').addEventListener('click', () => void runAction('inspect-excel-images', async signal => {
+  setStatus('reading');
+  const inventory = await inspectExcelEmbeddedImages(signal);
+  displayEmbeddedExcelImages(inventory);
+  setStatus('excelPictureInventory', { images: inventory.images.length });
 }));
 for (const mode of ['show', 'refresh'] as const) {
   element(mode).addEventListener('click', () => void runAction(mode, async signal => {

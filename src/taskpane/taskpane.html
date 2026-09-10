@@ -10,7 +10,7 @@
   <main class="app-shell">
     <header class="app-header">
       <div><span class="badge" data-i18n="badge">Compatibility &amp; images</span><h1>WPS Image Compat</h1>
-        <p class="intro" data-i18n="intro">Check compatibility and preview WPS cell images while keeping your formulas.</p></div>
+        <p class="intro" data-i18n="intro">An Excel compatibility toolbox for WPS images, embedded pictures, and workbook checks.</p></div>
       <label class="enable-control" for="addin-enabled"><span data-i18n="addinEnabled">Enable WPS Image Compat</span><input id="addin-enabled" type="checkbox" checked /></label>
     </header>
     <section class="host-card" aria-label="Excel connection">
@@ -27,10 +27,11 @@
       <p class="hint" data-i18n="updateHint">Reloads this pane and clears its scan results. Existing worksheet previews stay in place.</p>
     </section>
     <section class="workflow-card" aria-labelledby="image-workflow-title">
-      <div class="section-heading"><div><h2 id="image-workflow-title" data-i18n="imageToolsTitle">Restore WPS images</h2>
+      <div class="section-heading"><div><h2 id="image-workflow-title" data-i18n="imageToolsTitle">Image recovery toolbox</h2>
         <p data-i18n="hint">Scan reads only. Show and Refresh add floating PNG/JPEG previews.</p></div></div>
       <button id="scan" class="primary-action" data-i18n="scan" disabled>Scan Workbook</button>
       <div class="action-grid">
+        <button id="inspect-excel-images" class="secondary-action wide" data-i18n="inspectExcelImages" disabled>Inspect Excel embedded pictures</button>
         <button id="repair-selected-image" class="secondary-action" data-i18n="repairSelectedImage" disabled>Repair selected code cell</button>
         <button id="repair-damaged-images" class="secondary-action" data-i18n="repairDamagedImages" disabled>Repair metadata code cells</button>
         <button id="show" class="subtle-action" data-i18n="show" disabled>Show Images</button>
@@ -44,6 +45,7 @@
       <header><h2><span data-i18n="detected">Detected:</span> <strong id="image-count">—</strong> <span data-i18n="images">WPS images</span></h2><p data-i18n="summary">Scan results</p></header>
       <dl class="metric-grid"><div><dt data-i18n="sheets">Worksheets with images</dt><dd id="sheet-count">—</dd></div>
         <div><dt data-i18n="excelImages">Excel image shapes</dt><dd id="excel-image-count">—</dd></div>
+        <div><dt data-i18n="excelEmbeddedImages">Excel embedded images</dt><dd id="excel-embedded-count">—</dd></div>
         <div><dt data-i18n="parsed">Resources parsed</dt><dd id="parsed-count">—</dd></div>
         <div><dt data-i18n="missing">Missing resources</dt><dd id="missing-count">—</dd></div>
         <div><dt data-i18n="errors">Resource errors</dt><dd id="error-count">—</dd></div></dl>
