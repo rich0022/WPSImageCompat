@@ -9,17 +9,17 @@ test('validates release metadata and rejects malformed values or unexpected data
     assert.equal(parseRelease(value), undefined);
   }
 });
-test('detects same-version rebuilds, clears a stale notice, and uses a content-free same-origin request', async () => {
+test('detects same-version rebuilds, clears a stale notice, and uses a cache-busting same-origin request', async () => {
   const updates: (ReleaseInfo | undefined)[] = [];
   let remote = { ...current, buildId: 'build-b' };
   const fetcher: typeof fetch = async (url, options) => {
-    assert.equal(url, '/version.json');
+    assert.equal(url, '/version.json?update=123');
     assert.equal(options?.cache, 'no-store');
     assert.equal(options?.credentials, 'omit');
     assert.equal(options?.body, undefined);
     return new Response(JSON.stringify(remote));
   };
-  const check = createUpdateChecker(current, release => updates.push(release), fetcher);
+  const check = createUpdateChecker(current, release => updates.push(release), fetcher, 10000, () => 123);
   await check();
   remote = current;
   await check();

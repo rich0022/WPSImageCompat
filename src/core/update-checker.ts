@@ -8,7 +8,7 @@ export function parseRelease(value: unknown): ReleaseInfo | undefined {
 }
 /** Checks same-origin metadata only. It never reloads the pane or touches a workbook. */
 export function createUpdateChecker(current: ReleaseInfo, onChange: (release?: ReleaseInfo) => void,
-  fetcher: typeof fetch = fetch, timeoutMs = 10000) {
+  fetcher: typeof fetch = fetch, timeoutMs = 10000, now: () => number = Date.now) {
   let inFlight = false;
   return async (): Promise<void> => {
     if (inFlight) return;
@@ -16,7 +16,11 @@ export function createUpdateChecker(current: ReleaseInfo, onChange: (release?: R
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const response = await fetcher('/version.json', { cache: 'no-store', credentials: 'omit', signal: controller.signal });
+      // Assets can be cached by an intermediary despite no-store. A changing,
+      // content-free query ensures an already open task pane sees a deployment.
+      const response = await fetcher(`/version.json?update=${encodeURIComponent(String(now()))}`, {
+        cache: 'no-store', credentials: 'omit', signal: controller.signal,
+      });
       if (!response.ok) return;
       const release = parseRelease(await response.json());
       if (release) onChange(release.buildId === current.buildId ? undefined : release);
