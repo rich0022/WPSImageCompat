@@ -23,6 +23,26 @@ export async function listManagedWorksheetImages(): Promise<ManagedWorksheetImag
     }));
   });
 }
+/** Replaces legacy JSON accessibility text on add-in-owned images without changing cells or geometry. */
+export async function normalizeManagedWorksheetImageMetadata(): Promise<void> {
+  requireShapes();
+  await Excel.run(async context => {
+    const sheets = context.workbook.worksheets; sheets.load('items/name'); await context.sync();
+    for (const sheet of sheets.items) sheet.shapes.load('items/name,items/altTextTitle,items/altTextDescription,items/left,items/top,items/width,items/height,items/placement');
+    await context.sync();
+    for (const sheet of sheets.items) for (const shape of sheet.shapes.items) {
+      const shapeKind = kind(shape); const metadata = shapeMetadata(shape);
+      if (!shapeKind || !metadata || !shape.altTextDescription.trim().startsWith('{')) continue;
+      const original = metadata.original ?? { left: shape.left, top: shape.top, width: shape.width, height: shape.height,
+        placement: shape.placement === Excel.Placement.absolute ? 'Absolute' as const : 'TwoCell' as const };
+      const next = { ...metadata, original };
+      shape.name = shapeKind === 'preview' ? previewName(metadata.imageId, metadata.address, crypto.randomUUID(), next) :
+        convertedName(metadata.imageId, metadata.address, crypto.randomUUID(), next);
+      shape.altTextDescription = readableDescription(shapeKind, metadata.address);
+    }
+    await context.sync();
+  });
+}
 /** Registers activation handlers only for add-in-owned Shapes. One click is enough to identify the picture. */
 export async function watchManagedWorksheetImages(onActivated: (image: Pick<ManagedWorksheetImage, 'worksheetName' | 'shapeId'>) => void): Promise<void> {
   if (!canObserveWorksheetImageSelection()) return;

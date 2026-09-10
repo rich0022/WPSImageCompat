@@ -11,7 +11,7 @@ import { showWorkbookImages } from '../core/preview-controller';
 import { canRenderImages, removePreviewImages } from '../core/image-renderer';
 import type { PreviewResult } from '../core/image-renderer';
 import { collectViewableImages, createImageViewer } from './image-viewer';
-import { canObserveWorksheetImageSelection, listManagedWorksheetImages, toggleWorksheetImageZoom, watchManagedWorksheetImages } from '../core/worksheet-image-zoom';
+import { canObserveWorksheetImageSelection, listManagedWorksheetImages, normalizeManagedWorksheetImageMetadata, toggleWorksheetImageZoom, watchManagedWorksheetImages } from '../core/worksheet-image-zoom';
 import type { ManagedWorksheetImage } from '../core/worksheet-image-zoom';
 import { WorkbookError } from '../utils/errors';
 import { createDiagnosticReport, readHostCapabilities } from '../core/diagnostics';
@@ -53,12 +53,14 @@ let statusText: () => string = () => '';
 let hostText = () => t('connecting');
 const imageViewer = createImageViewer();
 let managedWorksheetImages: ManagedWorksheetImage[] = [];
-let activatedWorksheetImage: Pick<ManagedWorksheetImage, 'worksheetName' | 'shapeId'> | undefined;
+let activatedWorksheetImage: ManagedWorksheetImage | undefined;
 async function watchWorksheetImages(): Promise<void> {
   await watchManagedWorksheetImages(active => {
-    activatedWorksheetImage = active;
-    setStatus('worksheetImageSelected');
-    updateControls();
+    void listManagedWorksheetImages().then(images => {
+      activatedWorksheetImage = images.find(image => image.shapeId === active.shapeId && image.worksheetName === active.worksheetName);
+      if (activatedWorksheetImage) setStatus('worksheetImageSelected');
+      updateControls();
+    }).catch(() => { /* The list fallback remains available. */ });
   });
 }
 function renderManagedWorksheetImages(): void {
@@ -89,7 +91,9 @@ function updateControls(): void {
   for (const id of ['show', 'refresh', 'remove']) element<HTMLButtonElement>(id).disabled = !shapesReady || busy;
   element<HTMLButtonElement>('view-images').disabled = !imageViewer.hasImages() || busy;
   element<HTMLButtonElement>('manage-worksheet-images').disabled = !ready || busy;
-  element<HTMLButtonElement>('zoom-selected-image').disabled = !activatedWorksheetImage || busy;
+  const selectedZoom = element<HTMLButtonElement>('zoom-selected-image');
+  selectedZoom.disabled = !activatedWorksheetImage || busy;
+  selectedZoom.textContent = t(activatedWorksheetImage?.zoomed ? 'restoreSelectedImage' : 'zoomSelectedImage');
   element<HTMLFieldSetElement>('preview-settings').disabled = !shapesReady || busy;
   element<HTMLFieldSetElement>('conversion-settings').disabled = !ready || busy;
   const selectedConversion = element<HTMLInputElement>('convert-dispimg').checked ||
@@ -218,13 +222,13 @@ function displayConversion(result: WorkbookConversionResult): void {
   renderResults();
   void watchWorksheetImages().catch(() => { /* Shape activation is optional; the list remains available. */ });
 }
-async function runAction(operation: string, action: (signal: AbortSignal) => Promise<void>, cancellable = true): Promise<void> {
+async function runAction(operation: string, action: (signal: AbortSignal) => Promise<void>, cancellable = true, preserveResults = false): Promise<void> {
   if (!ready || busy) return;
   busy = true;
   cancelAllowed = cancellable;
   controller = new AbortController();
   lastOperation = operation;
-  clearResults();
+  if (!preserveResults) clearResults();
   updateControls();
   try { await action(controller.signal); }
   catch (error) {
@@ -257,7 +261,8 @@ if (typeof Office === 'undefined') {
     if (!host.scan) { hostText = () => t('scanUnsupported'); applyLanguage(); return; }
     ready = true;
     shapesReady = canRenderImages();
-    if (canObserveWorksheetImageSelection()) void watchWorksheetImages().catch(() => { /* optional capability */ });
+    if (canObserveWorksheetImageSelection()) void normalizeManagedWorksheetImageMetadata()
+      .then(watchWorksheetImages).catch(() => { /* optional capability */ });
     hostText = () => t('connected', { platform: String(info.platform) }) + (shapesReady ? '' : ' · ' + t('scanOnly'));
     applyLanguage();
   }).catch(() => {
@@ -346,8 +351,9 @@ element('zoom-selected-image').addEventListener('click', () => {
   const image = (await listManagedWorksheetImages()).find(item => item.shapeId === selected.shapeId && item.worksheetName === selected.worksheetName);
   if (!image) throw new WorkbookError('IMAGE_NOT_FOUND', 'The selected WPS Image Compat picture is no longer available.');
   const zoomed = await toggleWorksheetImageZoom(image);
+  activatedWorksheetImage = { ...image, zoomed };
   setStatus(zoomed ? 'worksheetImageZoomed' : 'worksheetImageRestored');
-  }, false);
+  }, false, true);
 });
 element('cancel').addEventListener('click', () => {
   if (!busy || !cancelAllowed) return;
