@@ -11,7 +11,7 @@ import { showWorkbookImages } from '../core/preview-controller';
 import { canRenderImages, removePreviewImages } from '../core/image-renderer';
 import type { PreviewResult } from '../core/image-renderer';
 import { collectViewableImages, createImageViewer } from './image-viewer';
-import { listManagedWorksheetImages, toggleWorksheetImageZoom } from '../core/worksheet-image-zoom';
+import { canZoomActiveWorksheetImage, listManagedWorksheetImages, toggleActiveWorksheetImageZoom, toggleWorksheetImageZoom } from '../core/worksheet-image-zoom';
 import type { ManagedWorksheetImage } from '../core/worksheet-image-zoom';
 import { WorkbookError } from '../utils/errors';
 import { createDiagnosticReport, readHostCapabilities } from '../core/diagnostics';
@@ -81,6 +81,7 @@ function updateControls(): void {
   for (const id of ['show', 'refresh', 'remove']) element<HTMLButtonElement>(id).disabled = !shapesReady || busy;
   element<HTMLButtonElement>('view-images').disabled = !imageViewer.hasImages() || busy;
   element<HTMLButtonElement>('manage-worksheet-images').disabled = !ready || busy;
+  element<HTMLButtonElement>('zoom-selected-image').disabled = !canZoomActiveWorksheetImage() || busy;
   element<HTMLFieldSetElement>('preview-settings').disabled = !shapesReady || busy;
   element<HTMLFieldSetElement>('conversion-settings').disabled = !ready || busy;
   const selectedConversion = element<HTMLInputElement>('convert-dispimg').checked ||
@@ -328,6 +329,10 @@ element('manage-worksheet-images').addEventListener('click', () => void runActio
   managedWorksheetImages = await listManagedWorksheetImages();
   renderManagedWorksheetImages();
   setStatus(managedWorksheetImages.length ? 'worksheetImagesReady' : 'worksheetImagesEmpty');
+}, false));
+element('zoom-selected-image').addEventListener('click', () => void runAction('worksheet-image-zoom', async () => {
+  const zoomed = await toggleActiveWorksheetImageZoom();
+  setStatus(zoomed ? 'worksheetImageZoomed' : 'worksheetImageRestored');
 }, false));
 element('cancel').addEventListener('click', () => {
   if (!busy || !cancelAllowed) return;

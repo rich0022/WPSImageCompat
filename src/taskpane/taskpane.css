@@ -7,7 +7,13 @@ h2 { font-size: 17px; margin: 0 0 16px; }
 p { line-height: 1.5; }
 .badge { font-size: 10px; font-weight: 700; letter-spacing: .1em; color: #27734f; }
 #host-status { padding: 10px; background: #e7f0eb; border-radius: 6px; }
-.summary { background: white; border: 1px solid #d9e3dc; padding: 16px; border-radius: 10px; margin: 18px 0; }
+.summary { background: white; border: 1px solid #d9e3dc; padding: 16px; border-radius: 10px; margin: 12px 0; }
+.work-section { margin: 14px 0; border: 1px solid #d9e3dc; border-radius: 10px; background: white; overflow: hidden; }
+.work-section > summary { padding: 14px 16px; font-size: 16px; font-weight: 700; cursor: pointer; list-style: none; }
+.work-section > summary::after { content: '+'; float: right; color: #176442; }
+.work-section[open] > summary::after { content: '−'; }
+.work-section > :not(summary) { margin-left: 16px; margin-right: 16px; }
+.work-section > .actions { margin-bottom: 16px; }
 dl { margin: 0; font-size: 12px; }
 dl div { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; }
 dd { margin: 0; text-align: right; }

@@ -4,6 +4,7 @@ import { WorkbookError } from '../utils/errors';
 export interface ManagedWorksheetImage { worksheetName: string; shapeId: string; address: string; kind: 'preview' | 'converted'; zoomed: boolean; }
 type ShapeKind = ManagedWorksheetImage['kind'];
 function supported(): boolean { return typeof Office !== 'undefined' && Office.context.requirements.isSetSupported('ExcelApi', '1.10'); }
+export function canZoomActiveWorksheetImage(): boolean { return supported() && Office.context.requirements.isSetSupported('ExcelApi', '1.19'); }
 function kind(shape: Pick<Excel.Shape, 'name' | 'altTextTitle'>): ShapeKind | undefined {
   return isPreviewShape(shape) ? 'preview' : isConvertedShape(shape) ? 'converted' : undefined;
 }
@@ -50,4 +51,17 @@ export async function toggleWorksheetImageZoom(item: ManagedWorksheetImage): Pro
     await context.sync();
     return next.zoomed;
   });
+}
+
+/** Modern Excel hosts expose the selected Shape directly; older hosts keep the list fallback. */
+export async function toggleActiveWorksheetImageZoom(): Promise<boolean> {
+  if (!canZoomActiveWorksheetImage()) throw new WorkbookError('ACTIVE_SHAPE_UNSUPPORTED', 'Select a plugin image in a newer Excel desktop host, or use the image list.');
+  const shapeId = await Excel.run(async context => {
+    const active = context.workbook.getActiveShapeOrNullObject(); active.load('id,isNullObject'); await context.sync();
+    return active.isNullObject ? undefined : active.id;
+  });
+  if (!shapeId) throw new WorkbookError('IMAGE_NOT_FOUND', 'Select a WPS Image Compat picture in the worksheet first.');
+  const item = (await listManagedWorksheetImages()).find(image => image.shapeId === shapeId);
+  if (!item) throw new WorkbookError('IMAGE_NOT_FOUND', 'The selected shape is not a WPS Image Compat picture.');
+  return toggleWorksheetImageZoom(item);
 }

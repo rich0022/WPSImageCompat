@@ -20,44 +20,52 @@
       <p class="hint" data-i18n="updateHint">Reloads this pane and clears its scan results. Existing worksheet previews stay in place.</p>
     </section>
     <p id="host-status" role="status">Connecting to Excel…</p>
-    <section class="summary" aria-labelledby="compatibility-title">
-      <h2 id="compatibility-title" data-i18n="compatTitle">Compatibility check</h2>
+    <details class="work-section" aria-labelledby="compatibility-title">
+      <summary id="compatibility-title" data-i18n="compatTitle">Compatibility check</summary>
       <p class="hint" data-i18n="compatIntro"></p>
       <div class="actions"><button id="compatibility" data-i18n="compatCheck" disabled>Check Compatibility</button>
         <button id="compatibility-download" data-i18n="compatDownload" aria-describedby="compatibility-privacy" disabled>Download Detailed Report</button></div>
       <p id="compatibility-privacy" class="hint" data-i18n="compatPrivacy"></p>
       <div id="compatibility-results"></div>
-    </section>
-    <section class="summary" aria-label="Scan results" data-i18n-label="summary">
+    </details>
+    <details class="work-section" open aria-label="Scan results" data-i18n-label="summary">
+      <summary data-i18n="imageToolsTitle">Restore WPS images</summary>
+      <section class="summary">
       <h2><span data-i18n="detected">Detected:</span> <strong id="image-count">—</strong> <span data-i18n="images">WPS images</span></h2>
       <dl><div><dt data-i18n="sheets">Worksheets with images</dt><dd id="sheet-count">—</dd></div>
         <div><dt data-i18n="parsed">Resources parsed</dt><dd id="parsed-count">—</dd></div>
         <div><dt data-i18n="missing">Missing resources</dt><dd id="missing-count">—</dd></div><div><dt data-i18n="errors">Resource errors</dt><dd id="error-count">—</dd></div></dl>
-    </section>
+      </section>
     <div class="actions">
       <button id="scan" data-i18n="scan" disabled>Scan Workbook</button>
       <button id="show" data-i18n="show" disabled>Show Images</button><button id="refresh" data-i18n="refresh" disabled>Refresh Images</button>
       <button id="remove" data-i18n="remove" disabled>Remove Preview Images</button>
       <button id="view-images" data-i18n="viewImages" disabled>View large images</button>
+      <button id="zoom-selected-image" data-i18n="zoomSelectedImage" disabled>Enlarge selected image</button>
       <button id="manage-worksheet-images" data-i18n="manageWorksheetImages" disabled>Enlarge worksheet image</button>
       <button id="cancel" data-i18n="cancel" disabled>Cancel Scan / Read</button>
-      <button id="diagnostics" data-i18n="diagnostics" disabled>Download Diagnostics</button>
     </div>
     <fieldset id="preview-settings" disabled><legend data-i18n="settings">Preview settings</legend>
       <label><input id="keep-aspect-ratio" type="checkbox" checked /> <span data-i18n="aspect">Keep aspect ratio</span></label>
       <label><input id="fit-inside-cell" type="checkbox" checked /> <span data-i18n="fit">Fit image inside cell</span></label>
       <label><input id="preserve-formula" type="checkbox" checked disabled /> <span data-i18n="preserve">Preserve original DISPIMG formula (always)</span></label>
     </fieldset>
-    <fieldset id="conversion-settings" disabled><legend data-i18n="conversionSettings">Conversion settings</legend>
+    </details>
+    <details class="work-section"><summary data-i18n="conversionSettings">Conversion settings</summary>
+    <fieldset id="conversion-settings" disabled>
       <label><input id="convert-dispimg" type="checkbox" checked /> <span data-i18n="convertDispimg">Convert DISPIMG to permanent Excel images</span></label>
       <label><input id="freeze-unsupported" type="checkbox" /> <span data-i18n="freezeUnsupported">Replace supported current results of unsupported formulas with values</span></label>
       <label><input id="freeze-external" type="checkbox" /> <span data-i18n="freezeExternal">Replace supported current results of external-reference formulas with values</span></label>
       <label><input id="conversion-confirm" type="checkbox" /> <span data-i18n="conversionConfirm">I understand this changes the current workbook. I have saved a copy.</span></label>
       <button id="convert" data-i18n="convert" aria-describedby="conversion-note" disabled>Convert Workbook</button>
     </fieldset>
+    </details>
+    <details class="work-section"><summary data-i18n="moreToolsTitle">Reports and support</summary>
+      <div class="actions"><button id="diagnostics" data-i18n="diagnostics" disabled>Download Diagnostics</button></div>
+      <p class="hint" data-i18n="privacy"></p>
+    </details>
     <p class="hint" data-i18n="hint"></p>
     <p id="conversion-note" class="hint" data-i18n="conversion"></p>
-    <p class="hint" data-i18n="privacy"></p>
     <p id="scan-status" role="status" aria-live="polite"></p>
     <ul id="results" aria-label="Detected image cells" data-i18n-label="results"></ul>
     <section id="worksheet-image-panel" class="summary" hidden><h2 data-i18n="worksheetImageTitle">Worksheet images</h2>
