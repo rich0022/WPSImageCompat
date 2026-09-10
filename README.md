@@ -37,7 +37,7 @@ WPS 用户请在安装了桌面版 **WPS 表格** 的 Windows 或 Linux 电脑�
 1. 启动服务并信任开发证书。
 2. 将根目录 `manifest.xml` 复制到 `~/Library/Containers/com.microsoft.Excel/Data/Documents/wef/wps-image-compat.xml`，不存在的目录先创建。升级时替换旧清单。
 3. 保存当前工作并完全退出、重新打开 Excel，再打开工作簿。从 **开始（Home）→ 加载项（Add-ins）**菜单选择本插件。部分旧界面也可能提供“插入 → 我的加载项”旁的小箭头菜单，请以实际界面为准。侧载插件不一定出现在账户/商店对话框中；“开发工具 → Excel 加载项”管理传统加载项，不用于本项目。
-4. 从 **WPS Image Compat** Ribbon 标签打开任务窗格。
+4. 从 **插入（Insert）→ 图片兼容 → WPS 图片工具** 打开任务窗格。加载项不再新增独立的顶部 Ribbon 标签。
 5. 打开 WPS 工作簿，看到 `Connected to Excel` 后点击 **Scan Workbook**。
 
 参考：[Microsoft macOS sideload 文档](https://learn.microsoft.com/en-us/office/dev/add-ins/testing/sideload-an-office-add-in-on-mac)。

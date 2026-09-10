@@ -4,7 +4,7 @@
  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
  xsi:type="TaskPaneApp">
   <Id>3544be99-20cf-40d0-99be-4f84b9ee6b02</Id>
-  <Version>1.5.0.0</Version>
+  <Version>1.5.1.0</Version>
   <ProviderName>WPSImageCompat</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="WPS Image Compat for Excel"/>
@@ -26,7 +26,7 @@
       </GetStarted>
       <FunctionFile resid="Taskpane.Url"/>
       <ExtensionPoint xsi:type="PrimaryCommandSurface">
-        <CustomTab id="WPSImageCompat.Tab">
+        <OfficeTab id="TabInsert">
           <Group id="WPSImageCompat.Group">
             <Label resid="Group.Label"/>
             <Icon><bt:Image size="16" resid="Icon.16"/><bt:Image size="32" resid="Icon.32"/><bt:Image size="80" resid="Icon.80"/></Icon>
@@ -37,8 +37,7 @@
               <Action xsi:type="ShowTaskpane"><TaskpaneId>WPSImageCompat.Taskpane</TaskpaneId><SourceLocation resid="Taskpane.Url"/></Action>
             </Control>
           </Group>
-          <Label resid="Tab.Label"/>
-        </CustomTab>
+        </OfficeTab>
       </ExtensionPoint>
     </DesktopFormFactor></Host></Hosts>
     <Resources>
@@ -53,12 +52,11 @@
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GetStarted.Title" DefaultValue="WPS Image Compat for Excel"/>
-        <bt:String id="Tab.Label" DefaultValue="WPS Image Compat"/>
-        <bt:String id="Group.Label" DefaultValue="WPS Images"/>
-        <bt:String id="Button.Label" DefaultValue="Open WPS Image Compat"/>
+        <bt:String id="Group.Label" DefaultValue="图片兼容"/>
+        <bt:String id="Button.Label" DefaultValue="WPS 图片工具"/>
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="GetStarted.Description" DefaultValue="Open the WPS Image Compat ribbon tab to scan your workbook."/>
+        <bt:String id="GetStarted.Description" DefaultValue="Open WPS 图片工具 in the Insert tab to scan your workbook."/>
         <bt:String id="Button.Description" DefaultValue="Find WPS DISPIMG formulas without changing workbook data."/>
       </bt:LongStrings>
     </Resources>
