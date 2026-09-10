@@ -16,6 +16,22 @@ export function damagedImageCell(value: unknown, address: string): { imageId: st
 export function damagedImageDescriptionCell(value: unknown, address: string): boolean {
   return value === `WPS Image Compat converted image for ${address}.` || value === `WPS Image Compat preview for ${address}.`;
 }
+/**
+ * A native in-cell image does not expose its backing metadata consistently:
+ * different Excel builds may return it through formulas, values, or display
+ * text. Accept only an exact, address-bound payload from any of those fields.
+ */
+export function damagedImageMetadataValue(candidates: readonly unknown[], address: string):
+  { imageId?: string; value: string; kind: DamagedImageCell['kind'] } | undefined {
+  for (const candidate of candidates) {
+    const metadata = damagedImageCell(candidate, address);
+    if (metadata && typeof candidate === 'string') return { ...metadata, value: candidate, kind: 'json' };
+    if (damagedImageDescriptionCell(candidate, address) && typeof candidate === 'string') {
+      return { value: candidate, kind: 'description' };
+    }
+  }
+  return undefined;
+}
 
 /** Read-only scan for cells accidentally replaced by old add-in image metadata. */
 export async function scanDamagedImageCells(): Promise<DamagedImageCell[]> {
@@ -33,17 +49,14 @@ export async function scanDamagedImageCells(): Promise<DamagedImageCell[]> {
       for (let offset = 0; offset < used.rowCount; offset += batchRows) {
         const rowCount = Math.min(batchRows, used.rowCount - offset);
         const batch = sheet.getRangeByIndexes(used.rowIndex + offset, used.columnIndex, rowCount, used.columnCount);
-        batch.load('formulas,values');
+        batch.load('formulas,values,text');
         await context.sync();
         for (let row = 0; row < rowCount; row++) for (let column = 0; column < used.columnCount; column++) {
-          const value = batch.values[row]?.[column];
-          // Excel's “Place in Cell” representation can report a different
-          // formula field even though the visible cell value is our exact,
-          // address-bound recovery payload. Do not discard it on that basis.
           const address = cellAddress(used.rowIndex + offset + row, used.columnIndex + column);
-          const metadata = damagedImageCell(value, address);
-          if (metadata && typeof value === 'string') cells.push({ worksheetName: sheet.name, address, imageId: metadata.imageId, value, kind: 'json' });
-          else if (damagedImageDescriptionCell(value, address) && typeof value === 'string') cells.push({ worksheetName: sheet.name, address, value, kind: 'description' });
+          const metadata = damagedImageMetadataValue([
+            batch.formulas[row]?.[column], batch.values[row]?.[column], batch.text[row]?.[column],
+          ], address);
+          if (metadata) cells.push({ worksheetName: sheet.name, address, ...metadata });
         }
       }
     }

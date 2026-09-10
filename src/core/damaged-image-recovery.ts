@@ -1,6 +1,6 @@
 import { WorkbookError } from '../utils/errors';
 import type { PreviewSettings } from './image-layout';
-import { scanDamagedImageCells, damagedImageCell, damagedImageDescriptionCell, type DamagedImageCell } from './legacy-image-cell-metadata';
+import { scanDamagedImageCells, damagedImageMetadataValue, type DamagedImageCell } from './legacy-image-cell-metadata';
 import { readWorkbook } from './workbook-reader';
 import { parseWpsImages } from './wps-image-parser';
 import { mapImages } from './image-mapper';
@@ -21,10 +21,12 @@ async function clearRecoveredCells(cells: DamagedImageCell[]): Promise<number> {
       const sheet = byName.get(cell.worksheetName);
       if (!sheet) continue;
       const range = sheet.getRange(cell.address);
-      range.load('formulas,values');
+      range.load('formulas,values,text');
       await context.sync();
-      const value = range.values[0]?.[0];
-      if (!damagedImageCell(value, cell.address)?.imageId && !damagedImageDescriptionCell(value, cell.address)) continue;
+      const current = damagedImageMetadataValue([
+        range.formulas[0]?.[0], range.values[0]?.[0], range.text?.[0]?.[0],
+      ], cell.address);
+      if (!current || current.kind !== cell.kind || current.imageId !== cell.imageId) continue;
       range.clear(Excel.ClearApplyTo.contents);
       await context.sync();
       cleared++;

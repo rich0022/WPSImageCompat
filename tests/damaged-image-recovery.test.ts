@@ -7,7 +7,7 @@ function restore(key: 'Excel', descriptor: PropertyDescriptor | undefined): void
   else Reflect.deleteProperty(globalThis, key);
 }
 
-test('finds a valid in-cell recovery payload even when Excel reports a different formula field', async () => {
+test('finds a valid in-cell recovery payload when Excel exposes it only through formulas', async () => {
   const oldExcel = Object.getOwnPropertyDescriptor(globalThis, 'Excel');
   const value = JSON.stringify({ imageId: 'ID_A', address: 'C2', fitInsideCell: true, offsetLeft: 4, offsetTop: 1 });
   const used = {
@@ -16,7 +16,7 @@ test('finds a valid in-cell recovery payload even when Excel reports a different
   const sheet = {
     name: 'Sheet1',
     getUsedRangeOrNullObject() { return used; },
-    getRangeByIndexes() { return { formulas: [['', '', ''], ['', '', '=IMAGE("native")']], values: [['', '', ''], ['', '', value]], load() {} }; },
+    getRangeByIndexes() { return { formulas: [['', '', ''], ['', '', value]], values: [['', '', ''], ['', '', 'Picture']], text: [['', '', ''], ['', '', 'Picture']], load() {} }; },
   };
   Object.defineProperty(globalThis, 'Excel', { configurable: true, value: {
     run: async (callback: (context: unknown) => unknown) => callback({

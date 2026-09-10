@@ -4,7 +4,7 @@ import { imageLayout } from './image-layout';
 import { CONVERTED_MARKER, convertedName, inCellRecoveryMetadata, isPreviewShape, matchesConverted, matchesPreview, PREVIEW_MARKER, previewName } from './preview-identity';
 import { parseDispimgFormula } from './dispimg-formula';
 import { WorkbookError } from '../utils/errors';
-import { damagedImageCell } from './legacy-image-cell-metadata';
+import { damagedImageMetadataValue } from './legacy-image-cell-metadata';
 
 export interface PreviewIssue { location: string; message: string; code?: string }
 export interface PreviewResult { inserted: number; existing: number; removed: number; skipped: number; issues: PreviewIssue[]; renderedCells?: ImageMapping['cell'][] }
@@ -63,12 +63,12 @@ export async function renderImages(
         if (!sheet) throw new WorkbookError('SHEET_CHANGED', 'Worksheet no longer exists. Scan again.');
         if (sheet.protection.protected) throw new WorkbookError('PROTECTED_SHEET', 'Worksheet is protected.');
         const cell = sheet.getRange(mapping.cell.address);
-        cell.load('left,top,width,height,formulas,values,rowHidden,columnHidden');
+        cell.load('left,top,width,height,formulas,values,text,rowHidden,columnHidden');
         const merged = mergedSupported ? cell.getMergedAreasOrNullObject() : undefined;
         if (merged) merged.load('areas/items/left,areas/items/top,areas/items/width,areas/items/height');
         await context.sync();
         const expectedCell = mode === 'recover'
-          ? damagedImageCell(cell.values[0]?.[0], mapping.cell.address)?.imageId === mapping.cell.imageId
+          ? damagedImageMetadataValue([cell.formulas[0]?.[0], cell.values[0]?.[0], cell.text?.[0]?.[0]], mapping.cell.address)?.imageId === mapping.cell.imageId
           : cell.formulas[0]?.[0] !== cell.values[0]?.[0] && parseDispimgFormula(cell.formulas[0]?.[0]) === mapping.cell.imageId;
         if (!expectedCell) {
           throw new WorkbookError('CELL_CHANGED', 'The DISPIMG cell changed. Scan again.');
@@ -114,10 +114,10 @@ export async function renderImages(
       let added: Created | undefined;
       try {
         // Recheck immediately before writing, after potentially slow workbook preparation.
-        target.cell.load('formulas,values');
+        target.cell.load('formulas,values,text');
         await context.sync();
         const expectedCell = mode === 'recover'
-          ? damagedImageCell(target.cell.values[0]?.[0], target.mapping.cell.address)?.imageId === target.mapping.cell.imageId
+          ? damagedImageMetadataValue([target.cell.formulas[0]?.[0], target.cell.values[0]?.[0], target.cell.text?.[0]?.[0]], target.mapping.cell.address)?.imageId === target.mapping.cell.imageId
           : target.cell.formulas[0]?.[0] !== target.cell.values[0]?.[0] &&
             parseDispimgFormula(target.cell.formulas[0]?.[0]) === target.mapping.cell.imageId;
         if (!expectedCell) {
